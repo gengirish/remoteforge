@@ -21,7 +21,12 @@ export async function SiteHeader() {
           </Link>
           {clerkEnabled &&
             (userId ? (
-              <UserButton afterSignOutUrl="/" />
+              <>
+                <Link href="/profile" className="hover:text-primary">
+                  My Profile
+                </Link>
+                <UserButton afterSignOutUrl="/" />
+              </>
             ) : (
               <>
                 <SignInButton mode="modal">

@@ -13,4 +13,8 @@ export {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleUpsertProfile,
+  handleGetProfile,
+  handleToggleSavedJob,
+  handleGetSavedJobs,
 } from "./handlers";
