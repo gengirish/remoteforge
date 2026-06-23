@@ -14,6 +14,7 @@ import {
   handleJobSlugs,
   handleJobsGet,
   handleRazorpayWebhook,
+  handleRecommendedJobs,
   handleSubscribe,
 } from "@intelliforge/api-core";
 
@@ -32,7 +33,7 @@ app.use(
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret", "X-Clerk-User-Id"],
   }),
 );
 
@@ -58,6 +59,11 @@ app.get("/api/jobs", async (c) => {
     c.req.header("X-Internal-Key"),
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
+  return c.json(body, status);
+});
+
+app.get("/api/jobs/recommended", async (c) => {
+  const { status, body } = await handleRecommendedJobs(c.req.header("X-Clerk-User-Id"));
   return c.json(body, status);
 });
 

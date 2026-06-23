@@ -2,14 +2,16 @@ import Link from "next/link";
 import type { Job } from "@intelliforge/db";
 import { apiGoUrl } from "@/lib/api-url";
 import { IndiaBadge } from "./india-badge";
+import { MatchScoreBadge } from "./match-score-badge";
 import { SalaryBadge } from "./salary-badge";
 import { Button } from "./ui/button";
 
 interface JobCardProps {
   job: Job;
+  matchScore?: number | null;
 }
 
-export function JobCard({ job }: JobCardProps) {
+export function JobCard({ job, matchScore }: JobCardProps) {
   return (
     <article className="rounded-xl border border-border bg-background p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
@@ -20,6 +22,11 @@ export function JobCard({ job }: JobCardProps) {
             </Link>
           </h3>
           <p className="text-sm text-muted-foreground">{job.company}</p>
+          {matchScore != null && matchScore > 0 && (
+            <div className="mt-1">
+              <MatchScoreBadge score={matchScore} />
+            </div>
+          )}
         </div>
         <IndiaBadge accepted={job.indiaFriendly} />
       </div>

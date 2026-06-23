@@ -60,3 +60,22 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+export type RecommendedJob = Job & { matchScore: number | null };
+
+export async function fetchRecommendedJobs(clerkId?: string) {
+  const headers: Record<string, string> = {};
+  if (clerkId) headers["X-Clerk-User-Id"] = clerkId;
+  try {
+    const res = await fetch(`${getApiUrl()}/api/jobs/recommended`, {
+      headers,
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { success: boolean; data?: { jobs: RecommendedJob[]; personalized: boolean } };
+    if (!json.success) return null;
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+}
