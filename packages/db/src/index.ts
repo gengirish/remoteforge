@@ -15,4 +15,4 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export { PrismaClient };
-export type { Job, GigPlatform, JobClick, GigClick, Subscriber, FeaturedSlot } from "@prisma/client";
+export type { Job, GigPlatform, JobClick, GigClick, Subscriber, FeaturedSlot, CompanyProfile } from "@prisma/client";

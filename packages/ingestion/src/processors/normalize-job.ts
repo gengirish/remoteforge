@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import type { NormalizedJob } from "../sources/remotive";
-import { detectIndiaEligibility } from "./india-check";
+import { detectIndiaEligibility, detectTimezoneFriendly, detectVisaSponsorship } from "./india-check";
 import { generateSlug } from "./slug";
 import { extractTags } from "./tags";
 import { wrapJobLink } from "@intelliforge/affiliate-links";
@@ -19,6 +19,8 @@ export interface PrismaJobInput {
   sourceUrl: string;
   affiliateUrl: string;
   indiaFriendly: boolean;
+  timezoneFriendly: boolean;
+  visaSponsorship: boolean;
   postedAt: Date;
 }
 
@@ -41,6 +43,8 @@ export function normalizeJob(raw: NormalizedJob): PrismaJobInput {
     sourceUrl: raw.url,
     affiliateUrl: wrapJobLink(raw.url),
     indiaFriendly: detectIndiaEligibility(raw.description, raw.company),
+    timezoneFriendly: detectTimezoneFriendly(raw.description),
+    visaSponsorship: detectVisaSponsorship(raw.description),
     postedAt: raw.postedAt,
   };
 }

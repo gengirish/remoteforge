@@ -1,5 +1,6 @@
 export { ok, fail, type ApiResponse } from "./response";
 export {
+  handleCompaniesIndia,
   handleDigest,
   handleFeaturedCreateOrder,
   handleGigSlugs,

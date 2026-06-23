@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
+  handleCompaniesIndia,
   handleDigest,
   handleFeaturedCreateOrder,
   handleGigsGet,
@@ -130,6 +131,11 @@ app.post("/api/webhooks/razorpay", async (c) => {
     raw,
     c.req.header("x-razorpay-signature") ?? "",
   );
+  return c.json(body, status);
+});
+
+app.get("/api/companies/india", async (c) => {
+  const { status, body } = await handleCompaniesIndia();
   return c.json(body, status);
 });
 
