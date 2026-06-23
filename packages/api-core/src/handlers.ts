@@ -482,3 +482,84 @@ export async function handleGigAffiliateUpdate(
 
   return { status: 200 as const, body: ok(updated) };
 }
+
+// ─── Salary Oracle ────────────────────────────────────────────────────────────
+
+function toRoleSlug(role: string): string {
+  return role.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function computePercentile(sorted: number[], p: number): number {
+  const idx = Math.floor(sorted.length * p);
+  return sorted[Math.min(idx, sorted.length - 1)] ?? 0;
+}
+
+const salarySubmitSchema = z.object({
+  role: z.string().min(2).max(100),
+  company: z.string().max(100).optional(),
+  yearsExp: z.number().int().min(0).max(50),
+  salaryUsd: z.number().int().min(1000).max(1000000),
+  city: z.string().max(100).optional(),
+});
+
+export async function handleSubmitSalary(body: unknown) {
+  const parsed = salarySubmitSchema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const roleSlug = toRoleSlug(parsed.data.role);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const report = await (prisma as any).salaryReport.create({
+    data: { ...parsed.data, roleSlug },
+  });
+  return { status: 200 as const, body: ok({ id: report.id, roleSlug }) };
+}
+
+export async function handleSalaryByRole(roleSlug: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reports = await (prisma as any).salaryReport.findMany({
+    where: { roleSlug },
+    select: { salaryUsd: true, yearsExp: true, company: true, city: true, submittedAt: true },
+    orderBy: { submittedAt: "desc" as const },
+    take: 500,
+  });
+
+  if (reports.length < 3) {
+    return {
+      status: 200 as const,
+      body: ok({ roleSlug, dataPoints: reports.length, message: "Insufficient data — be the first to contribute!" }),
+    };
+  }
+
+  const salaries: number[] = (reports as Array<{ salaryUsd: number }>)
+    .map((r) => r.salaryUsd)
+    .sort((a, b) => a - b);
+  const median = computePercentile(salaries, 0.5);
+  const p25 = computePercentile(salaries, 0.25);
+  const p75 = computePercentile(salaries, 0.75);
+  const avg = Math.round(salaries.reduce((s, v) => s + v, 0) / salaries.length);
+
+  return {
+    status: 200 as const,
+    body: ok({
+      roleSlug,
+      dataPoints: reports.length,
+      median,
+      p25,
+      p75,
+      avg,
+      min: salaries[0],
+      max: salaries[salaries.length - 1],
+    }),
+  };
+}
+
+export async function handleSalaryRoles() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const roles = await (prisma as any).salaryReport.groupBy({
+    by: ["roleSlug", "role"],
+    _count: { id: true },
+    orderBy: { _count: { id: "desc" as const } },
+    take: 50,
+  });
+  return { status: 200 as const, body: ok({ roles }) };
+}

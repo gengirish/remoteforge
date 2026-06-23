@@ -18,6 +18,9 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleSubmitSalary,
+  handleSalaryByRole,
+  handleSalaryRoles,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -182,6 +185,23 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
   return c.json(res, status);
+});
+
+// Salary Oracle — /api/salary/roles must precede /api/salary/:roleSlug
+app.post("/api/salary", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleSubmitSalary(body);
+  return c.json(res, status);
+});
+
+app.get("/api/salary/roles", async (c) => {
+  const { status, body } = await handleSalaryRoles();
+  return c.json(body, status);
+});
+
+app.get("/api/salary/:roleSlug", async (c) => {
+  const { status, body } = await handleSalaryByRole(c.req.param("roleSlug"));
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {
