@@ -1,5 +1,6 @@
 FROM node:22-slim AS base
 WORKDIR /app
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 
 FROM base AS deps
@@ -13,12 +14,15 @@ COPY apps/api/package.json ./apps/api/
 RUN pnpm install --frozen-lockfile --filter api... --ignore-scripts
 
 FROM base AS runner
+COPY package.json pnpm-workspace.yaml ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY packages ./packages
 COPY apps/api ./apps/api
-WORKDIR /app/apps/api
-RUN pnpm --filter @intelliforge/db exec prisma generate --schema=../../packages/db/prisma/schema.prisma
+WORKDIR /app
+RUN pnpm --filter @intelliforge/db exec prisma generate
+RUN pnpm --filter api build
+WORKDIR /app
 EXPOSE 8080
-CMD ["pnpm", "start"]
+CMD ["pnpm", "--filter", "api", "start"]

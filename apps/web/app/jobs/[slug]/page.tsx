@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Building2 } from "lucide-react";
 import { EmployerUpsellBanner } from "@/components/employer-upsell-banner";
 import { FeaturedCheckout } from "@/components/featured-checkout";
 import { IndiaBadge } from "@/components/india-badge";
@@ -31,6 +32,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
   const jsonLd = jobJsonLd(job);
   const applyUrl = apiGoUrl(job.id, { type: "job", clickType: "apply" });
+  const initial = job.company.charAt(0).toUpperCase();
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -38,38 +40,66 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{job.title}</h1>
-          <p className="mt-1 text-lg text-muted-foreground">{job.company}</p>
+
+      <Link
+        href="/jobs"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to jobs
+      </Link>
+
+      <article className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-8 sm:px-8">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary font-display text-lg font-bold text-primary-foreground shadow-sm">
+              {initial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-bold sm:text-3xl">{job.title}</h1>
+                  <p className="mt-1 flex items-center gap-1.5 text-muted-foreground">
+                    <Building2 className="h-4 w-4" />
+                    {job.company}
+                  </p>
+                </div>
+                <IndiaBadge accepted={job.indiaFriendly} />
+              </div>
+              <div className="mt-4">
+                <SalaryBadge salaryMin={job.salaryMin} salaryMax={job.salaryMax} />
+              </div>
+              {job.tags.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {job.tags.map((tag: string) => (
+                    <Link
+                      key={tag}
+                      href={`/jobs/tag/${tag}`}
+                      className="rounded-full bg-secondary px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <IndiaBadge accepted={job.indiaFriendly} />
-      </div>
-      <div className="mt-4">
-        <SalaryBadge salaryMin={job.salaryMin} salaryMax={job.salaryMax} />
-      </div>
-      {job.tags.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {job.tags.map((tag) => (
-            <Link
-              key={tag}
-              href={`/jobs/tag/${tag}`}
-              className="rounded-full bg-muted px-3 py-1 text-sm hover:bg-primary/10"
-            >
-              {tag}
-            </Link>
-          ))}
+
+        <div className="px-6 py-8 sm:px-8">
+          <div className="prose prose-sm max-w-none prose-headings:font-display prose-a:text-primary">
+            <div dangerouslySetInnerHTML={{ __html: job.description }} />
+          </div>
+
+          <div className="mt-8 flex flex-col gap-4 border-t border-border pt-8">
+            <Button asChild size="lg" className="w-fit">
+              <a href={applyUrl}>Apply to this job</a>
+            </Button>
+            <ScoreResumeCTA job={job} />
+          </div>
         </div>
-      )}
-      <div className="prose prose-sm mt-8 max-w-none">
-        <div dangerouslySetInnerHTML={{ __html: job.description }} />
-      </div>
-      <div className="mt-8 flex flex-col gap-4">
-        <Button asChild size="lg" className="w-fit">
-          <a href={applyUrl}>Apply to this job →</a>
-        </Button>
-        <ScoreResumeCTA job={job} />
-      </div>
+      </article>
+
       <div className="mt-8">
         <FeaturedCheckout jobId={job.id} jobTitle={job.title} />
       </div>

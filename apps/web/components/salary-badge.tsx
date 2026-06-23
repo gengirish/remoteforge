@@ -25,7 +25,7 @@ export function SalaryBadge({
   return (
     <span
       className={cn(
-        "text-sm font-medium text-emerald-700",
+        "inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-800 ring-1 ring-emerald-100",
         className,
       )}
     >

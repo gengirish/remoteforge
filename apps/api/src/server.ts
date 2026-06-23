@@ -152,6 +152,6 @@ app.get("/go/:id", async (c) => {
   return c.json(result.body, result.status);
 });
 
-serve({ fetch: app.fetch, port: PORT }, (info) => {
+serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {
   console.log(`remoteforge-api listening on http://localhost:${info.port}`);
 });

@@ -1,4 +1,5 @@
 import { JobCard } from "@/components/job-card";
+import { PageHeader } from "@/components/page-header";
 import { fetchJobs } from "@/lib/data";
 import { notFound } from "next/navigation";
 
@@ -13,12 +14,20 @@ export default async function CategoryPage({ params }: { params: { cat: string }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-bold capitalize">Remote {params.cat} jobs</h1>
+      <PageHeader
+        title={`Remote ${params.cat} jobs`}
+        description={`${jobs.length} open roles in ${params.cat}.`}
+      />
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {jobs.map((job) => (
           <JobCard key={job.id} job={job} />
         ))}
       </div>
+      {jobs.length === 0 && (
+        <p className="mt-12 text-center text-muted-foreground">
+          No jobs in this category yet.
+        </p>
+      )}
     </div>
   );
 }

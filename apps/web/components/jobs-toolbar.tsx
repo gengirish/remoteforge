@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback } from "react";
 import { JobFilters, type JobFiltersState } from "./job-filters";
 import { SearchBar } from "./search-bar";
+import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
 
 export function JobsToolbar() {
   const router = useRouter();
@@ -37,7 +40,7 @@ export function JobsToolbar() {
   );
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="mt-6 space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <SearchBar
         placeholder="Search jobs by title or company..."
         defaultValue={filters.search ?? ""}
@@ -65,20 +68,38 @@ export function JobsPagination({
   };
 
   return (
-    <div className="mt-8 flex justify-center gap-4">
-      {page > 1 && (
-        <Link href={makeHref(page - 1)} className="text-sm text-primary hover:underline">
-          ← Previous
+    <nav
+      className="mt-10 flex items-center justify-center gap-3"
+      aria-label="Pagination"
+    >
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className={cn(page <= 1 && "pointer-events-none opacity-40")}
+      >
+        <Link href={page > 1 ? makeHref(page - 1) : "#"} aria-disabled={page <= 1}>
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          Previous
         </Link>
-      )}
-      <span className="text-sm text-muted-foreground">
+      </Button>
+      <span className="min-w-[7rem] text-center text-sm text-muted-foreground">
         Page {page} of {totalPages}
       </span>
-      {page < totalPages && (
-        <Link href={makeHref(page + 1)} className="text-sm text-primary hover:underline">
-          Next →
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className={cn(page >= totalPages && "pointer-events-none opacity-40")}
+      >
+        <Link
+          href={page < totalPages ? makeHref(page + 1) : "#"}
+          aria-disabled={page >= totalPages}
+        >
+          Next
+          <ChevronRight className="ml-1 h-4 w-4" />
         </Link>
-      )}
-    </div>
+      </Button>
+    </nav>
   );
 }

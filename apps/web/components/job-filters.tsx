@@ -26,31 +26,43 @@ interface JobFiltersProps {
 
 export function JobFilters({ filters, onChange, className }: JobFiltersProps) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      <select
-        value={filters.category ?? ""}
-        onChange={(e) =>
-          onChange({ ...filters, category: e.target.value || undefined })
-        }
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm"
-      >
-        <option value="">All categories</option>
+    <div className={cn("flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center", className)}>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onChange({ ...filters, category: undefined })}
+          className={cn(
+            "filter-pill",
+            !filters.category && "filter-pill-active",
+          )}
+        >
+          All
+        </button>
         {CATEGORIES.map((cat) => (
-          <option key={cat} value={cat}>
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </option>
+          <button
+            key={cat}
+            type="button"
+            onClick={() => onChange({ ...filters, category: cat })}
+            className={cn(
+              "filter-pill capitalize",
+              filters.category === cat && "filter-pill-active",
+            )}
+          >
+            {cat}
+          </button>
         ))}
-      </select>
+      </div>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-muted/50 sm:ml-auto">
         <input
           type="checkbox"
           checked={filters.indiaOnly ?? false}
           onChange={(e) =>
             onChange({ ...filters, indiaOnly: e.target.checked || undefined })
           }
+          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
         />
-        India-friendly only
+        <span className="font-medium">India-friendly only</span>
       </label>
     </div>
   );

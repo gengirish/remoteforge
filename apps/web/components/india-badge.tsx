@@ -9,14 +9,15 @@ export function IndiaBadge({ accepted, className }: IndiaBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold",
         accepted
-          ? "bg-emerald-100 text-emerald-800"
-          : "bg-red-100 text-red-800",
+          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+          : "bg-red-50 text-red-700 ring-1 ring-red-200",
         className,
       )}
     >
-      {accepted ? "India ✓" : "India ✗"}
+      <span aria-hidden>{accepted ? "🇮🇳" : "🌍"}</span>
+      {accepted ? "India OK" : "Intl only"}
     </span>
   );
 }

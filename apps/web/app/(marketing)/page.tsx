@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { Briefcase, Globe, Sparkles } from "lucide-react";
 import { EmailCapture } from "@/components/email-capture";
+import { Button } from "@/components/ui/button";
 import { LandingTabs } from "./landing-tabs";
 import { fetchHomeData } from "@/lib/data";
 
@@ -13,26 +16,55 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
-      <section className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          India&apos;s home for{" "}
-          <span className="text-primary">remote jobs</span> and{" "}
-          <span className="text-primary">AI gig work</span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          Compare pay, India eligibility, and onboarding time — then apply with
-          referral links that actually work.
-        </p>
-        <div className="mt-6 inline-flex rounded-full bg-muted px-4 py-2 text-sm font-medium">
-          {stats.jobCount.toLocaleString()} remote jobs · {stats.gigCount} AI
-          platforms · {stats.indiaGigCount} India-eligible
+    <>
+      <section className="hero-gradient border-b border-border">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="animate-fade-up text-sm font-semibold uppercase tracking-wider text-primary">
+              Built for India&apos;s remote workforce
+            </p>
+            <h1 className="animate-fade-up mt-4 text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl [animation-delay:80ms]">
+              Find remote jobs &amp; AI gigs that actually hire from{" "}
+              <span className="text-primary">India</span>
+            </h1>
+            <p className="animate-fade-up mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground [animation-delay:160ms]">
+              Compare pay ranges, India eligibility, and onboarding timelines —
+              then apply with referral links that work.
+            </p>
+
+            <div className="animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-3 [animation-delay:240ms]">
+              <Button asChild size="lg">
+                <Link href="/jobs">Browse remote jobs</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/ai-gigs">Compare AI platforms</Link>
+              </Button>
+            </div>
+
+            <div className="animate-fade-up mt-10 flex flex-wrap items-center justify-center gap-3 [animation-delay:320ms]">
+              <span className="stat-pill">
+                <Briefcase className="h-4 w-4 text-primary" />
+                {stats.jobCount.toLocaleString()} remote jobs
+              </span>
+              <span className="stat-pill">
+                <Sparkles className="h-4 w-4 text-accent" />
+                {stats.gigCount} AI platforms
+              </span>
+              <span className="stat-pill">
+                <Globe className="h-4 w-4 text-emerald-600" />
+                {stats.indiaGigCount} India-eligible
+              </span>
+            </div>
+          </div>
         </div>
       </section>
-      <LandingTabs jobs={data?.jobs ?? []} gigs={data?.gigs ?? []} />
-      <section className="mt-16">
-        <EmailCapture />
-      </section>
-    </div>
+
+      <div className="mx-auto max-w-6xl px-4 py-12">
+        <LandingTabs jobs={data?.jobs ?? []} gigs={data?.gigs ?? []} />
+        <section className="mt-20">
+          <EmailCapture />
+        </section>
+      </div>
+    </>
   );
 }

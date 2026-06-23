@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { JobCard } from "@/components/job-card";
 import { JobsPagination, JobsToolbar } from "@/components/jobs-toolbar";
+import { JobsToolbarSkeleton } from "@/components/jobs-toolbar-skeleton";
+import { PageHeader } from "@/components/page-header";
 import { fetchJobs } from "@/lib/data";
 import { jobsListingMetadata } from "@/lib/seo";
 
@@ -30,11 +32,11 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-bold">Remote Jobs</h1>
-      <p className="mt-2 text-muted-foreground">
-        {total.toLocaleString()} jobs open to remote workers
-      </p>
-      <Suspense fallback={null}>
+      <PageHeader
+        title="Remote Jobs"
+        description={`${total.toLocaleString()} roles open to remote workers — filter by category or India eligibility.`}
+      />
+      <Suspense fallback={<JobsToolbarSkeleton />}>
         <JobsToolbar />
       </Suspense>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -43,9 +45,12 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
         ))}
       </div>
       {jobs.length === 0 && (
-        <p className="mt-12 text-center text-muted-foreground">
-          No jobs match your filters.
-        </p>
+        <div className="mt-12 rounded-xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
+          <p className="font-medium">No jobs match your filters</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Try clearing filters or searching with different keywords.
+          </p>
+        </div>
       )}
       <Suspense fallback={null}>
         <JobsPagination page={Number(page)} totalPages={totalPages} />
