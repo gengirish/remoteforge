@@ -60,3 +60,26 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+type ApplicationWithJob = {
+  id: string;
+  company: string;
+  status: string;
+  appliedAt: string;
+  updatedAt: string;
+  job: { title: string; slug: string; salaryMin: number | null; salaryMax: number | null };
+};
+
+export async function fetchUserApplications(clerkId: string): Promise<{ applications: ApplicationWithJob[] } | null> {
+  try {
+    const res = await fetch(`${process.env.API_URL}/api/applications`, {
+      headers: { "X-Clerk-User-Id": clerkId },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { success: boolean; data?: { applications: ApplicationWithJob[] } };
+    return json.success && json.data ? json.data : null;
+  } catch {
+    return null;
+  }
+}

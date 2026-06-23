@@ -1,7 +1,9 @@
 export { ok, fail, type ApiResponse } from "./response";
 export {
+  handleCompanyStats,
   handleDigest,
   handleFeaturedCreateOrder,
+  handleGetApplications,
   handleGigSlugs,
   handleGigsGet,
   handleGoRedirect,
@@ -13,4 +15,5 @@ export {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleUpsertApplication,
 } from "./handlers";

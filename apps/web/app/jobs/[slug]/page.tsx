@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ApplyTrackButton } from "@/components/apply-track-button";
 import { EmployerUpsellBanner } from "@/components/employer-upsell-banner";
 import { FeaturedCheckout } from "@/components/featured-checkout";
 import { IndiaBadge } from "@/components/india-badge";
 import { ScoreResumeCTA } from "@/components/job-card-cta";
 import { SalaryBadge } from "@/components/salary-badge";
-import { Button } from "@/components/ui/button";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
 import { apiGoUrl } from "@/lib/api-url";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
@@ -65,9 +65,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         <div dangerouslySetInnerHTML={{ __html: job.description }} />
       </div>
       <div className="mt-8 flex flex-col gap-4">
-        <Button asChild size="lg" className="w-fit">
-          <a href={applyUrl}>Apply to this job →</a>
-        </Button>
+        <ApplyTrackButton
+          jobId={job.id}
+          applyUrl={applyUrl}
+          apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
+        />
         <ScoreResumeCTA job={job} />
       </div>
       <div className="mt-8">

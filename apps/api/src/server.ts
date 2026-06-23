@@ -2,8 +2,10 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
+  handleCompanyStats,
   handleDigest,
   handleFeaturedCreateOrder,
+  handleGetApplications,
   handleGigsGet,
   handleGoRedirect,
   handleGigSlugs,
@@ -15,6 +17,7 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleUpsertApplication,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -32,7 +35,7 @@ app.use(
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
     allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret", "X-Clerk-User-Id"],
   }),
 );
 
@@ -152,6 +155,22 @@ app.get("/go/:id", async (c) => {
   return c.json(result.body, result.status);
 });
 
-serve({ fetch: app.fetch, port: PORT }, (info) => {
+app.post("/api/applications", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleUpsertApplication(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/applications", async (c) => {
+  const { status, body } = await handleGetApplications(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.get("/api/companies/:company/stats", async (c) => {
+  const { status, body } = await handleCompanyStats(c.req.param("company"));
+  return c.json(body, status);
+});
+
+serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {
   console.log(`remoteforge-api listening on http://localhost:${info.port}`);
 });
