@@ -60,3 +60,19 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+export async function fetchAllTags(): Promise<string[]> {
+  const data = await apiFetch<{ jobs: Job[]; total: number; totalPages: number }>(
+    "/api/jobs?limit=500",
+  );
+  if (!data) return [];
+  const tagSet = new Set<string>();
+  for (const job of data.jobs) {
+    for (const tag of job.tags) tagSet.add(tag);
+  }
+  return Array.from(tagSet).sort();
+}
+
+export async function fetchAllCategories(): Promise<string[]> {
+  return ["engineering", "design", "marketing", "sales", "support", "writing", "product"];
+}

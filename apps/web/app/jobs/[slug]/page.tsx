@@ -50,7 +50,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       </div>
       {job.tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {job.tags.map((tag) => (
+          {job.tags.map((tag: string) => (
             <Link
               key={tag}
               href={`/jobs/tag/${tag}`}

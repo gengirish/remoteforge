@@ -30,7 +30,7 @@ export function JobCard({ job }: JobCardProps) {
 
       {job.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {job.tags.slice(0, 5).map((tag) => (
+          {job.tags.slice(0, 5).map((tag: string) => (
             <Link
               key={tag}
               href={`/jobs/tag/${tag}`}
