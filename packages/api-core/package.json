@@ -1,0 +1,22 @@
+{
+  "name": "@intelliforge/api-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@intelliforge/affiliate-links": "workspace:*",
+    "@intelliforge/db": "workspace:*",
+    "@intelliforge/ingestion": "workspace:*",
+    "@intelliforge/job-alerts": "workspace:*",
+    "bullmq": "^5.71.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies":

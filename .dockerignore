@@ -1,0 +1,12 @@
+# Fly deploy build context — monorepo root
+.git
+.github
+**/.next
+**/node_modules
+**/dist
+**/.env
+**/.env.local
+**/tsconfig.tsbuildinfo
+remotejobs-affiliate-engine-scaffold-prompt.md
+terminals
+*.log

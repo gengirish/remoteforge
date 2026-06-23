@@ -1,0 +1,28 @@
+{
+  "name": "remoteforge",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "lint": "turbo lint",
+    "ingest": "tsx --env-file=.env scripts/ingest.ts",
+    "deploy:api": "fly deploy . --config apps/api/fly.toml --dockerfile apps/api/Dockerfile --ha=false --primary-region bom --regions bom",
+    "deploy:worker": "fly deploy . --config workers/ingestion/fly.toml --dockerfile workers/ingestion/Dockerfile --ha=false --primary-region bom --regions bom",
+    "deploy:web": "cd apps/web && vercel --prod",
+    "db:generate": "pnpm --filter @intelliforge/db db:generate",
+    "db:push": "pnpm --filter @intelliforge/db db:push",
+    "db:seed": "pnpm --filter @intelliforge/db db:seed",
+    "db:studio": "pnpm --filter @intelliforge/db db:studio"
+  },
+  "devDependencies": {
+    "@intelliforge/db": "workspace:*",
+    "@intelliforge/ingestion": "workspace:*",
+    "tsx": "^4.19.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
+  }
+}

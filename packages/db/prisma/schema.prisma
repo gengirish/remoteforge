@@ -1,0 +1,131 @@
+// packages/db/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  company       String
+  companyLogo   String?
+  description   String
+  tags          String[]
+  salaryMin     Int?
+  salaryMax     Int?
+  currency      String    @default("USD")
+  location      String    @default("Remote")
+  category      String
+  sourceBoard   String
+  sourceId      String
+  sourceUrl     String
+  affiliateUrl  String?
+  isActive      Boolean   @default(true)
+  isFeatured    Boolean   @default(false)
+  indiaFriendly Boolean   @default(true)
+  postedAt      DateTime
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  clicks        JobClick[]
+  featuredSlot  FeaturedSlot?
+
+  @@unique([sourceBoard, sourceId])
+  @@index([category, isActive])
+  @@index([postedAt(sort: Desc)])
+  @@index([isFeatured, isActive])
+}
+
+model JobClick {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id])
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  ipHash      String?
+  userAgent   String?
+  referrer    String?
+  converted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([jobId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model GigPlatform {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  name            String
+  logoUrl         String?
+  description     String
+  type            String
+  specialties     String[]
+  indiaAccepted   Boolean
+  indiaPayNote    String?
+  payMin          Int
+  payMax          Int
+  payNote         String?
+  onboardingDays  String
+  onboardingNote  String?
+  referralUrl     String?
+  affiliateUrl    String?
+  referralReward  String?
+  trustpilotScore Float?
+  trustpilotCount Int?
+  founded         Int?
+  isActive        Boolean    @default(true)
+  isFeatured      Boolean    @default(false)
+  sortOrder       Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  clicks          GigClick[]
+
+  @@index([type, isActive])
+  @@index([indiaAccepted, isActive])
+}
+
+model GigClick {
+  id         String      @id @default(cuid())
+  platformId String
+  platform   GigPlatform @relation(fields: [platformId], references: [id])
+  clickType  String
+  utmSource  String?
+  utmMedium  String?
+  ipHash     String?
+  createdAt  DateTime    @default(now())
+
+  @@index([platformId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Subscriber {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  phone          String?
+  jobCategories  String[]
+  jobTags        String[]
+  gigTypes       String[]
+  wantsGigAlerts Boolean  @default(false)
+  frequency      String   @default("weekly")
+  source         String   @default("web")
+  isVerified     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model FeaturedSlot {
+  id          String   @id @default(cuid())
+  jobId       String   @unique
+  job         Job      @relation(fields: [jobId], references: [id])
+  razorpayId  String?
+  amountPaise Int
+  startsAt    DateTime
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}

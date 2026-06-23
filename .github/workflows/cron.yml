@@ -1,0 +1,26 @@
+name: Cron
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    if: github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger job ingestion
+        run: |
+          curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.API_URL }}/api/jobs/ingest"
+
+  digest:
+    if: github.event.schedule == '0 8 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger email digest
+        run: |
+          curl -fsS -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.API_URL }}/api/cron/digest"
