@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { GigEarningsForm } from "@/components/gig-earnings-form";
 import { GigPlatformCard } from "@/components/gig-platform-card";
 import { IndiaBadge } from "@/components/india-badge";
 import { OnboardingTimeline } from "@/components/onboarding-timeline";
@@ -107,6 +108,22 @@ export default async function GigDetailPage({ params }: { params: { slug: string
           </div>
         </div>
       </article>
+
+      <section className="mt-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Real Earnings from India</h2>
+          <Link
+            href={`/ai-gigs/${params.slug}/earnings`}
+            className="text-sm text-primary hover:underline"
+          >
+            View all reports →
+          </Link>
+        </div>
+        <GigEarningsForm
+          platformId={platform.id}
+          apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
+        />
+      </section>
 
       {!platform.indiaAccepted && alternatives.length > 0 && (
         <section className="mt-12">

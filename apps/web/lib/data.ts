@@ -60,3 +60,19 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+export type GigEarningsData = {
+  platform: { id: string; name: string; slug: string; payMin: number; payMax: number; payNote: string | null };
+  dataPoints: number;
+  median?: number;
+  p90?: number;
+  avg?: number;
+  min?: number;
+  max?: number;
+  taskBreakdown?: Array<{ taskType: string; count: number; median: number }>;
+  message?: string;
+};
+
+export async function fetchGigEarnings(slug: string): Promise<GigEarningsData | null> {
+  return apiFetch<GigEarningsData>(`/api/gigs/${slug}/earnings`);
+}

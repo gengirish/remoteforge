@@ -18,6 +18,8 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleSubmitGigEarnings,
+  handleGigEarningsBySlug,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -35,7 +37,7 @@ app.use(
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret", "X-Clerk-User-Id"],
   }),
 );
 
@@ -78,6 +80,17 @@ app.get("/api/jobs/slugs", async (c) => {
 app.get("/api/gigs", async (c) => {
   const params = Object.fromEntries(new URL(c.req.url).searchParams);
   const { status, body } = await handleGigsGet(params);
+  return c.json(body, status);
+});
+
+app.post("/api/gigs/earnings", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleSubmitGigEarnings(body);
+  return c.json(res, status);
+});
+
+app.get("/api/gigs/:slug/earnings", async (c) => {
+  const { status, body } = await handleGigEarningsBySlug(c.req.param("slug"));
   return c.json(body, status);
 });
 

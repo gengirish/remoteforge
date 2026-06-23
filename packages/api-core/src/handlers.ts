@@ -482,3 +482,85 @@ export async function handleGigAffiliateUpdate(
 
   return { status: 200 as const, body: ok(updated) };
 }
+
+// ── Gig Earnings Reports ───────────────────────────────────────────────────
+
+const gigEarningsSubmitSchema = z.object({
+  platformId: z.string().min(1),
+  taskType: z.string().min(1).max(50),
+  hoursPerWeek: z.number().int().min(1).max(80),
+  earningsUsdMonth: z.number().int().min(1).max(50000),
+  city: z.string().max(100).optional(),
+});
+
+export async function handleSubmitGigEarnings(body: unknown) {
+  const parsed = gigEarningsSubmitSchema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const platform = await prisma.gigPlatform.findUnique({ where: { id: parsed.data.platformId } });
+  if (!platform) return { status: 404 as const, body: fail("Platform not found") };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const report = await (prisma as any).gigEarningsReport.create({ data: parsed.data });
+  return { status: 200 as const, body: ok({ id: report.id }) };
+}
+
+export async function handleGigEarningsByPlatform(platformId: string) {
+  const platform = await prisma.gigPlatform.findUnique({
+    where: { id: platformId },
+    select: { id: true, name: true, slug: true, payMin: true, payMax: true, payNote: true },
+  });
+  if (!platform) return { status: 404 as const, body: fail("Platform not found") };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reports = await (prisma as any).gigEarningsReport.findMany({
+    where: { platformId },
+    select: { taskType: true, hoursPerWeek: true, earningsUsdMonth: true, city: true, submittedAt: true },
+    orderBy: { submittedAt: "desc" as const },
+    take: 200,
+  });
+
+  if (reports.length < 3) {
+    return { status: 200 as const, body: ok({ platform, dataPoints: reports.length, message: "Not enough data yet — be the first to share your earnings!" }) };
+  }
+
+  const earnings: number[] = (reports as Array<{ earningsUsdMonth: number }>)
+    .map((r) => r.earningsUsdMonth)
+    .sort((a, b) => a - b);
+  const median = earnings[Math.floor(earnings.length * 0.5)] ?? 0;
+  const p90 = earnings[Math.floor(earnings.length * 0.9)] ?? 0;
+  const avg = Math.round(earnings.reduce((s, v) => s + v, 0) / earnings.length);
+
+  const byTask: Record<string, number[]> = {};
+  for (const r of reports as Array<{ taskType: string; earningsUsdMonth: number }>) {
+    if (!byTask[r.taskType]) byTask[r.taskType] = [];
+    byTask[r.taskType]!.push(r.earningsUsdMonth);
+  }
+  const taskBreakdown = Object.entries(byTask)
+    .map(([taskType, vals]) => ({
+      taskType,
+      count: vals.length,
+      median: [...vals].sort((a, b) => a - b)[Math.floor(vals.length * 0.5)] ?? 0,
+    }))
+    .sort((a, b) => b.median - a.median);
+
+  return {
+    status: 200 as const,
+    body: ok({
+      platform,
+      dataPoints: reports.length,
+      median,
+      p90,
+      avg,
+      min: earnings[0],
+      max: earnings[earnings.length - 1],
+      taskBreakdown,
+    }),
+  };
+}
+
+export async function handleGigEarningsBySlug(slug: string) {
+  const platform = await prisma.gigPlatform.findUnique({ where: { slug } });
+  if (!platform) return { status: 404 as const, body: fail("Platform not found") };
+  return handleGigEarningsByPlatform(platform.id);
+}
