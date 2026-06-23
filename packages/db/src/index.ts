@@ -1,18 +1,11 @@
-import { PrismaClient } from "@prisma/client";
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
-
-export { PrismaClient };
-export type { Job, GigPlatform, JobClick, GigClick, Subscriber, FeaturedSlot } from "@prisma/client";
+export { prisma, PrismaClient } from "./client";
+export { loadAffiliateSettings } from "./affiliate-settings";
+export type {
+  Job,
+  GigPlatform,
+  JobClick,
+  GigClick,
+  Subscriber,
+  FeaturedSlot,
+  ProductSetting,
+} from "@prisma/client";

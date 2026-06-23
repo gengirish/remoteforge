@@ -1,8 +1,11 @@
 import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { JOB_BOARD_AFFILIATES } from "@intelliforge/affiliate-links";
 import { prisma } from "@intelliforge/db";
 import { runIngestion } from "@intelliforge/ingestion";
 import { sendGigDigestEmail, sendJobDigestEmail } from "@intelliforge/job-alerts";
 import { z } from "zod";
+import { loadAffiliateSettings } from "@intelliforge/db";
+import { getAffiliateSettingsForAdmin } from "./affiliate-config";
 import { getRedirectTarget } from "./affiliate";
 import { authorizeCron } from "./cron-auth";
 import { fail, ok } from "./response";
@@ -331,13 +334,14 @@ export async function handleGoRedirect(
   const type = query.type ?? "job";
   const clickType = query.clickType ?? "apply";
   const ipHash = hashIp(headers.ip ?? "unknown");
+  const affiliateSettings = await loadAffiliateSettings();
 
   let targetUrl: string;
 
   if (type === "gig") {
     const platform = await prisma.gigPlatform.findUnique({ where: { id } });
     if (!platform) return { status: 404 as const, body: fail("Not found"), redirect: null };
-    targetUrl = getRedirectTarget("gig", platform, clickType as "apply" | "referral" | "guide");
+    targetUrl = getRedirectTarget("gig", platform, clickType as "apply" | "referral" | "guide", affiliateSettings);
     prisma.gigClick
       .create({
         data: {
@@ -352,7 +356,7 @@ export async function handleGoRedirect(
   } else {
     const job = await prisma.job.findUnique({ where: { id } });
     if (!job) return { status: 404 as const, body: fail("Not found"), redirect: null };
-    targetUrl = getRedirectTarget("job", job, "apply");
+    targetUrl = getRedirectTarget("job", job, "apply", affiliateSettings);
     prisma.jobClick
       .create({
         data: {
@@ -379,4 +383,102 @@ export async function handleJobSlugs() {
 export async function handleGigSlugs() {
   const platforms = await prisma.gigPlatform.findMany({ where: { isActive: true }, select: { slug: true } });
   return { status: 200 as const, body: ok(platforms.map((p) => p.slug)) };
+}
+
+function verifyInternalKey(provided: string | undefined, configured: string | undefined) {
+  return Boolean(provided && configured && provided === configured);
+}
+
+const affiliateSettingsUpdateSchema = z.object({
+  settings: z.array(
+    z.object({
+      key: z.string(),
+      value: z.string().nullable(),
+    }),
+  ),
+});
+
+export async function handleAffiliateSettingsGet(
+  internalKey: string | undefined,
+  configuredKey: string | undefined,
+) {
+  if (!verifyInternalKey(internalKey, configuredKey)) {
+    return { status: 401 as const, body: fail("Unauthorized") };
+  }
+  const data = await getAffiliateSettingsForAdmin();
+  return { status: 200 as const, body: ok(data) };
+}
+
+export async function handleAffiliateSettingsUpdate(
+  body: unknown,
+  internalKey: string | undefined,
+  configuredKey: string | undefined,
+) {
+  if (!verifyInternalKey(internalKey, configuredKey)) {
+    return { status: 401 as const, body: fail("Unauthorized") };
+  }
+
+  const parsed = affiliateSettingsUpdateSchema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const validKeys = new Set(JOB_BOARD_AFFILIATES.map((d) => d.key));
+
+  for (const item of parsed.data.settings) {
+    if (!validKeys.has(item.key)) continue;
+    const def = JOB_BOARD_AFFILIATES.find((d) => d.key === item.key)!;
+    await prisma.productSetting.upsert({
+      where: { key: item.key },
+      create: {
+        key: item.key,
+        value: item.value,
+        label: def.label,
+        description: def.description,
+        group: "affiliate",
+        sortOrder: def.sortOrder,
+      },
+      update: { value: item.value },
+    });
+  }
+
+  return { status: 200 as const, body: ok({ updated: parsed.data.settings.length }) };
+}
+
+const gigAffiliateUpdateSchema = z.object({
+  referralUrl: z.string().nullable().optional(),
+  affiliateUrl: z.string().nullable().optional(),
+  referralReward: z.string().nullable().optional(),
+});
+
+export async function handleGigAffiliateUpdate(
+  id: string,
+  body: unknown,
+  internalKey: string | undefined,
+  configuredKey: string | undefined,
+) {
+  if (!verifyInternalKey(internalKey, configuredKey)) {
+    return { status: 401 as const, body: fail("Unauthorized") };
+  }
+
+  const parsed = gigAffiliateUpdateSchema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const platform = await prisma.gigPlatform.findUnique({ where: { id } });
+  if (!platform) return { status: 404 as const, body: fail("Platform not found") };
+
+  const updated = await prisma.gigPlatform.update({
+    where: { id },
+    data: {
+      ...(parsed.data.referralUrl !== undefined
+        ? { referralUrl: parsed.data.referralUrl }
+        : {}),
+      ...(parsed.data.affiliateUrl !== undefined
+        ? { affiliateUrl: parsed.data.affiliateUrl }
+        : {}),
+      ...(parsed.data.referralReward !== undefined
+        ? { referralReward: parsed.data.referralReward }
+        : {}),
+    },
+  });
+
+  return { status: 200 as const, body: ok(updated) };
 }

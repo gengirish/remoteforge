@@ -1,4 +1,4 @@
-import { prisma } from "@intelliforge/db";
+import { loadAffiliateSettings, prisma } from "@intelliforge/db";
 import { normalizeJob } from "./processors/normalize-job";
 import { fetchRemotiveJobs } from "./sources/remotive";
 import { fetchRemoteOkJobs } from "./sources/remoteok";
@@ -28,10 +28,11 @@ async function fetchJobs(source: IngestSource) {
 export async function ingestSource(source: IngestSource): Promise<IngestResult> {
   try {
     const jobs = await fetchJobs(source);
+    const affiliateSettings = await loadAffiliateSettings();
     let upserted = 0;
 
     for (const raw of jobs) {
-      const normalized = normalizeJob(raw);
+      const normalized = normalizeJob(raw, affiliateSettings);
       await prisma.job.upsert({
         where: {
           sourceBoard_sourceId: {

@@ -171,6 +171,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@intelliforge/affiliate-links':
+        specifier: workspace:*
+        version: link:../affiliate-links
       '@prisma/client':
         specifier: ^6.19.0
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)

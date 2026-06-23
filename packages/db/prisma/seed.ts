@@ -1,3 +1,4 @@
+import { JOB_BOARD_AFFILIATES } from "@intelliforge/affiliate-links";
 import { prisma } from "../src/index";
 
 const platforms = [
@@ -114,6 +115,27 @@ async function main() {
   }
 
   console.log(`Seeded ${platforms.length} gig platforms.`);
+
+  console.log("Seeding affiliate product settings...");
+  for (const def of JOB_BOARD_AFFILIATES) {
+    await prisma.productSetting.upsert({
+      where: { key: def.key },
+      create: {
+        key: def.key,
+        value: process.env[def.envKey] ?? null,
+        label: def.label,
+        description: def.description,
+        group: "affiliate",
+        sortOrder: def.sortOrder,
+      },
+      update: {
+        label: def.label,
+        description: def.description,
+        sortOrder: def.sortOrder,
+      },
+    });
+  }
+  console.log(`Seeded ${JOB_BOARD_AFFILIATES.length} affiliate settings.`);
 }
 
 main()

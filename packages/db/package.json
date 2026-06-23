@@ -12,6 +12,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@intelliforge/affiliate-links": "workspace:*",
     "@prisma/client": "^6.19.0"
   },
   "devDependencies": {

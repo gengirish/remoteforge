@@ -54,6 +54,9 @@ curl https://remoteforge-api.fly.dev/api/home
 | `POST /api/webhooks/razorpay` | Payment webhook |
 | `GET /api/jobs/ingest` | Cron — job ingestion |
 | `GET /api/cron/digest` | Cron — email digest |
+| `GET /api/internal/affiliate-settings` | Admin — list affiliate config |
+| `PUT /api/internal/affiliate-settings` | Admin — save job board affiliate tags |
+| `PATCH /api/internal/gig-platforms/:id/affiliate` | Admin — save gig referral URLs |
 
 ## 2. Vercel — UI layer (`apps/web`)
 
@@ -78,9 +81,26 @@ API_URL=https://remoteforge-api.fly.dev
 NEXT_PUBLIC_APP_URL=https://remoteforge.in
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=   # optional
 CLERK_SECRET_KEY=                    # optional
+REMOTEFORGE_INTERNAL_KEY=            # same as Fly API — required for admin settings
+ADMIN_SETTINGS_TOKEN=                # passphrase for /admin/settings UI
 ```
 
-## 3. Cron (GitHub Actions)
+## 3. Product settings (affiliate links)
+
+Configure referral and affiliate links at **`/admin/settings`** (not indexed).
+
+1. Set on **Vercel** (web): `ADMIN_SETTINGS_TOKEN`, `REMOTEFORGE_INTERNAL_KEY`
+2. Set on **Fly API**: `REMOTEFORGE_INTERNAL_KEY` (same value)
+3. Run `pnpm db:push && pnpm db:seed` to create `ProductSetting` rows
+4. Open `https://remoteforge.in/admin/settings`, enter `ADMIN_SETTINGS_TOKEN`
+
+**Remote job boards** (Remotive, WWR, Turing, Toptal, Remote.com, FlexJobs): affiliate tag IDs saved in DB; applied live on `/go/:id` redirects.
+
+**AI gig platforms** (Outlier, Appen, etc.): per-platform referral URL, affiliate URL, and reward note.
+
+Env vars (`AFFILIATE_*`) still work as fallback until you save a value in the admin UI.
+
+## 4. Cron (GitHub Actions)
 
 Set repo secrets:
 

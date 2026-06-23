@@ -2,8 +2,11 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
+  handleAffiliateSettingsGet,
+  handleAffiliateSettingsUpdate,
   handleDigest,
   handleFeaturedCreateOrder,
+  handleGigAffiliateUpdate,
   handleGigsGet,
   handleGoRedirect,
   handleGigSlugs,
@@ -31,7 +34,7 @@ app.use(
       if (!origin) return "*";
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
   }),
 );
@@ -150,6 +153,35 @@ app.get("/go/:id", async (c) => {
     return c.redirect(result.redirect, 302);
   }
   return c.json(result.body, result.status);
+});
+
+app.get("/api/internal/affiliate-settings", async (c) => {
+  const { status, body } = await handleAffiliateSettingsGet(
+    c.req.header("X-Internal-Key"),
+    process.env.REMOTEFORGE_INTERNAL_KEY,
+  );
+  return c.json(body, status);
+});
+
+app.put("/api/internal/affiliate-settings", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleAffiliateSettingsUpdate(
+    body,
+    c.req.header("X-Internal-Key"),
+    process.env.REMOTEFORGE_INTERNAL_KEY,
+  );
+  return c.json(res, status);
+});
+
+app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleGigAffiliateUpdate(
+    c.req.param("id"),
+    body,
+    c.req.header("X-Internal-Key"),
+    process.env.REMOTEFORGE_INTERNAL_KEY,
+  );
+  return c.json(res, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {

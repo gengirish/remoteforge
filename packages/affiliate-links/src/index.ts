@@ -1,3 +1,15 @@
+export type { AffiliateSettings, JobBoardAffiliateDef } from "./settings";
+export {
+  JOB_BOARD_AFFILIATES,
+  dbRowsFromSettings,
+  getEnvAffiliateSettings,
+  mergeAffiliateSettings,
+  settingsFromDbRows,
+} from "./settings";
+
+import type { AffiliateSettings } from "./settings";
+import { getEnvAffiliateSettings, JOB_BOARD_AFFILIATES } from "./settings";
+
 export interface GigPlatformLink {
   referralUrl?: string | null;
   affiliateUrl?: string | null;
@@ -7,45 +19,6 @@ export interface GigPlatformLink {
 
 type GigLinkType = "referral" | "apply" | "guide";
 
-const AFFILIATE_MAP: Record<string, (url: string) => string> = {
-  "remotive.com": (url) => {
-    const tag = process.env.AFFILIATE_REMOTIVE_TAG;
-    if (!tag) return url;
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}ref=${tag}`;
-  },
-  "weworkremotely.com": (url) => {
-    const ref = process.env.AFFILIATE_WWR_REF;
-    if (!ref) return url;
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}ref=${ref}`;
-  },
-  "toptal.com": (url) => {
-    const ref = process.env.AFFILIATE_TOPTAL_REF;
-    if (!ref) return url;
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}ref=${ref}`;
-  },
-  "turing.com": (url) => {
-    const ref = process.env.AFFILIATE_TURING_REF;
-    if (!ref) return url;
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}ref=${ref}`;
-  },
-  "remote.com": (url) => {
-    const partner = process.env.AFFILIATE_REMOTE_PARTNER_CODE;
-    if (!partner) return url;
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}partner=${partner}`;
-  },
-  "flexjobs.com": (url) => {
-    const aid = process.env.AFFILIATE_FLEXJOBS_ID;
-    if (!aid) return url;
-    const sep = url.includes("?") ? "&" : "?";
-    return `${url}${sep}aid=${aid}`;
-  },
-};
-
 function getDomain(url: string): string | null {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -54,14 +27,25 @@ function getDomain(url: string): string | null {
   }
 }
 
-export function wrapJobLink(url: string): string {
+function appendParam(url: string, param: string, value: string): string {
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}${param}=${encodeURIComponent(value)}`;
+}
+
+export function wrapJobLink(
+  url: string,
+  settings?: AffiliateSettings,
+): string {
   const domain = getDomain(url);
   if (!domain) return url;
 
-  for (const [key, wrap] of Object.entries(AFFILIATE_MAP)) {
-    if (domain.includes(key)) {
-      return wrap(url);
-    }
+  const s = settings ?? getEnvAffiliateSettings();
+
+  for (const def of JOB_BOARD_AFFILIATES) {
+    if (!domain.includes(def.domain)) continue;
+    const value = s[def.settingsField];
+    if (value) return appendParam(url, def.param, value);
+    return url;
   }
 
   return url;

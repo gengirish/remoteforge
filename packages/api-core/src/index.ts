@@ -1,7 +1,10 @@
 export { ok, fail, type ApiResponse } from "./response";
 export {
   handleDigest,
+  handleAffiliateSettingsGet,
+  handleAffiliateSettingsUpdate,
   handleFeaturedCreateOrder,
+  handleGigAffiliateUpdate,
   handleGigSlugs,
   handleGigsGet,
   handleGoRedirect,
@@ -14,3 +17,4 @@ export {
   handleRazorpayWebhook,
   handleSubscribe,
 } from "./handlers";
+export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

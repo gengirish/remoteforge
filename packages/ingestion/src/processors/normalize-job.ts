@@ -22,7 +22,10 @@ export interface PrismaJobInput {
   postedAt: Date;
 }
 
-export function normalizeJob(raw: NormalizedJob): PrismaJobInput {
+export function normalizeJob(
+  raw: NormalizedJob,
+  settings?: import("@intelliforge/affiliate-links").AffiliateSettings,
+): PrismaJobInput {
   const tags =
     raw.tags.length > 0 ? raw.tags : extractTags(raw.description);
   const slug = generateSlug(raw.title, raw.company);
@@ -39,7 +42,7 @@ export function normalizeJob(raw: NormalizedJob): PrismaJobInput {
     sourceBoard: raw.sourceBoard,
     sourceId: raw.sourceId,
     sourceUrl: raw.url,
-    affiliateUrl: wrapJobLink(raw.url),
+    affiliateUrl: wrapJobLink(raw.url, settings),
     indiaFriendly: detectIndiaEligibility(raw.description, raw.company),
     postedAt: raw.postedAt,
   };

@@ -10,14 +10,51 @@
 
 | Platform | Monthly Traffic | Revenue Model | Job Post Price | Affiliate? | Weakness |
 |---|---|---|---|---|---|
-| We Work Remotely | 6M visits | Employer posts | $299/mo | No | No candidate personalization |
-| Remote OK | 600–800K visits | Employer posts | $599–$4,143 | No | Solo project, no SEO content |
+| We Work Remotely | 6M visits | Employer posts + candidate subs ($15–30/mo) | $299/mo (employers) | No (see below) | Paywalls apply; TopAccess bundles competitors |
+| Remote OK | 600–800K visits | Employer posts | $599–$4,143 | No | Solo project, no SEO content; bundled in WWR TopAccess |
 | Remotive | ~500K visits | Free API + employer | $299 | No | Thin filtering |
 | FlexJobs | 5.2M visits | Candidate pays $47–$99/mo | N/A | Yes (ShareASale) | Paywalls candidates |
 | Remote.co | 1.3M visits | Employer posts | ~$299 | No | Limited categories |
 | Working Nomads | 1.3M visits | Employer posts | ~$150 | No | Minimal SEO |
 
 WWR revenue ~$6M/year. Remote OK $3.4M solo-founder. India is Remote OK's #1 traffic source — but they give zero India-specific UX. That's the wedge.
+
+### WWR TopAccess — Competitive Intel (Jun 2026)
+
+WWR has pivoted from employer-only to a **dual revenue model** (employer posts + candidate subscriptions). They now compete directly with aggregators like RemoteForge — but paid and US-centric.
+
+| Plan | Price | Commitment | Scope |
+|---|---|---|---|
+| Basic (Free) | $0 | None | Browse, save jobs, upload resume, follow companies |
+| WWR Pro | $2.95 first mo → $14.95/mo | 12 months | Unlimited applies, 5 job alerts, subscriber events |
+| TopAccess Bundle | $29.95/mo | 12 months | Pro + Toptal + Arc + PeoplePerHour + Remote OK + NoDesk |
+
+**TopAccess claimed value**: $180+/mo bundled for $29.95/mo. Same aggregation thesis as RemoteForge — but paywalled with a 12-month lock-in and zero India-specific UX.
+
+**Apply flow risk**: WWR Pro is required for "unlimited job applications." Outbound apply links to `weworkremotely.com` may hit a paywall. RSS ingestion likely still works for discovery; monitor API/RSS stability as Remote OK is now bundled.
+
+**RemoteForge positioning vs TopAccess**: Free discovery · India filters + INR pay context · WhatsApp alerts · AI gig vertical WWR doesn't touch. Content angle: "WWR TopAccess vs free job aggregators."
+
+### WWR Affiliate Investigation — No Public Program
+
+**Verdict (Jun 2026)**: No public third-party affiliate or referral program for WWR Pro or TopAccess. Not on ShareASale/Awin, Impact, or similar networks. Job-board directories list WWR alongside Remote OK as having zero public affiliate programs.
+
+| WWR "program" | Who it's for | Payout | RemoteForge useful? |
+|---|---|---|---|
+| TopAccess Performance Rewards | TopAccess subscribers only | Up to $500 cash (Toptal/Arc at $1k earnings) or $100 sub credit (Upwork/Fiverr) | No — subscriber retention, not publisher CPA |
+| Sponsorships | B2B advertisers | Custom deals via partnerships@weworkremotely.com | Maybe later (newsletter/ads), not recurring affiliate |
+| `?ref=` param | Unknown / unverified | None confirmed | **Inactive** — do not build CTAs around WWR TopAccess onboarding |
+
+**Do not compete on bundling paid subs.** Compete on free discovery + India UX + hire-bounty CPA (Turing, Toptal).
+
+**Monetization stack for WWR-sourced jobs**:
+```
+User finds job on RemoteForge (free)
+  ├─ Direct apply (company careers page) — best UX, no commission
+  ├─ High-skill role → Turing / Toptal referral CTA ($100–$3,000 CPA)
+  ├─ WWR/RemoteOK listing → link to source for discovery only (no affiliate)
+  └─ Optional: FlexJobs upsell for paywall seekers (15–30% recurring, P2)
+```
 
 ### AI Gig Work Market
 
@@ -37,14 +74,19 @@ WWR revenue ~$6M/year. Remote OK $3.4M solo-founder. India is Remote OK's #1 tra
 
 | Program | Type | Commission | Cookie | Priority |
 |---|---|---|---|---|
-| Turing.com | Remote jobs | $1,000–$3,000/hire | 90 days | P1 |
-| Toptal | Remote jobs | $500/hire | 30 days | P1 |
+| Turing.com | Remote jobs + AI gigs | $150–$3,000/hire (turing.com/referrals) | 90 days | P1 |
+| Toptal | Remote jobs | $2,000/client hire · $100/talent accepted | 30 days | P1 |
 | Remote.com | Remote jobs | 10–15% recurring | 90 days | P1 |
 | Outlier AI | AI gigs | Dashboard referral (cash) | N/A | P1 |
-| FlexJobs | Remote jobs | 15–30% subscription | 30 days | P2 |
+| FlexJobs | Remote jobs | 15–30% subscription (ShareASale) | 30 days | P2 |
 | JobCopilot | Career tool | 30% recurring | 30 days | P2 |
 | TopResume | Resume service | 20% per sale | 30 days | P2 |
 | Jooble | Job board | CPC + CPA | Net45 | P3 |
+| ~~WWR TopAccess~~ | ~~Candidate sub~~ | ~~None — no public program~~ | — | **N/A** |
+
+**Toptal note**: TopAccess bundles Toptal access, but signups through WWR TopAccess do **not** credit `AFFILIATE_TOPTAL_REF`. Always use direct Toptal referral links on job detail CTAs.
+
+**WWR note**: `AFFILIATE_WWR_REF` retained in env for future use but **inactive** — no confirmed payout. Re-check quarterly via partnerships@weworkremotely.com.
 
 ---
 
@@ -132,10 +174,12 @@ WWR revenue ~$6M/year. Remote OK $3.4M solo-founder. India is Remote OK's #1 tra
 │                   MONETIZATION LAYER                             │
 │                                                                  │
 │  Remote Jobs:                  AI Gig Work:                     │
-│  Affiliate CPA (Turing etc)    Outlier referral (dashboard)     │
-│  Employer featured slots       Platform comparison content      │
-│  Resume review (Razorpay)      "How to get approved" guides     │
-│  Email newsletter sponsors     Email digest (AI gig alerts)     │
+│  Hire-bounty CPA (Turing,      Outlier referral (dashboard)     │
+│    Toptal — NOT WWR subs)      Platform comparison content      │
+│  FlexJobs sub upsell (P2)      "How to get approved" guides     │
+│  Employer featured slots       Email digest (AI gig alerts)     │
+│  Resume review (Razorpay)                                       │
+│  Email newsletter sponsors                                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -428,11 +472,17 @@ Generate every file completely. Key implementation details per file:
 ━━━ packages/@intelliforge/affiliate-links/src/index.ts ━━━
 Remote job affiliate map (read from env):
 - remotive.com → append ?ref=${AFFILIATE_REMOTIVE_TAG}
-- weworkremotely.com → append ?ref=${AFFILIATE_WWR_REF}
-- toptal.com → append ref param
-- turing.com → append ref param
+- weworkremotely.com → pass through sourceUrl only (AFFILIATE_WWR_REF inactive — no public program)
+- toptal.com → append ?ref=${AFFILIATE_TOPTAL_REF} (P1: $2k client / $100 talent — use on senior-role CTAs)
+- turing.com → append ref param (P1: $150–$3k hire bounty — strong India fit)
 - remote.com → append partner param
-- flexjobs.com → append aid param
+- flexjobs.com → append aid param (P2: optional paywall upsell, 15–30% recurring)
+
+Apply-button priority on job detail pages:
+1. Company careers page (direct apply) when URL is not a job-board intermediary
+2. Turing / Toptal referral CTA for engineering, design, product roles
+3. Source board link (WWR, RemoteOK, Remotive) — discovery only, no affiliate wrap
+4. Never link to WWR TopAccess onboarding (payment_plan=top_access) — competitor sub, no commission
 
 AI gig affiliate map:
 - wrapGigLink(platform: GigPlatform, type: "referral"|"apply"|"guide"): string
@@ -478,13 +528,13 @@ DATABASE_URL=
 REDIS_URL=
 NEXT_PUBLIC_APP_URL=https://remoteforge.in
 USD_TO_INR_RATE=84
-# Remote job affiliates
+# Remote job affiliates (P1 = activate first)
+AFFILIATE_TURING_REF=          # P1 — $150–$3,000/hire via turing.com/referrals
+AFFILIATE_TOPTAL_REF=          # P1 — $2,000/client · $100/talent accepted
 AFFILIATE_REMOTIVE_TAG=
-AFFILIATE_WWR_REF=
-AFFILIATE_TURING_REF=
-AFFILIATE_TOPTAL_REF=
 AFFILIATE_REMOTE_PARTNER_CODE=
-AFFILIATE_FLEXJOBS_ID=
+AFFILIATE_FLEXJOBS_ID=         # P2 — 15–30% recurring (ShareASale)
+AFFILIATE_WWR_REF=             # INACTIVE — no public WWR/TopAccess affiliate program (Jun 2026)
 # Payments
 RAZORPAY_KEY_ID=
 RAZORPAY_KEY_SECRET=
@@ -533,6 +583,12 @@ Vercel deploy, adding new gig platforms (manual seed), adding new job sources.
 /jobs/tag/python/india                   "Remote Python jobs open to India"
 /jobs/category/engineering               "Remote engineering jobs"
 /jobs/tag/ai-ml                          "Remote AI/ML jobs hiring now"
+/blog/wwr-topaccess-vs-free-aggregators  "WWR TopAccess vs free job boards — is $30/mo worth it?"
+/blog/is-weworkremotely-worth-it         "Is We Work Remotely Pro worth $15/month? (India perspective)"
+```
+
+### Competitive content moat (WWR TopAccess)
+Target users comparing paid bundles vs free aggregation. RemoteForge wins on: free · India filters · no 12-month lock-in · AI gig vertical.
 ```
 
 ### AI Gig Work pages (SSG)
@@ -575,10 +631,11 @@ Month 12 (50K daily visitors):
 
 You have done RLHF/SFT evaluation work at Outlier AI. This gives you:
 
-1. Personal referral link from your Outlier dashboard (P1 monetization, activate immediately)
-2. First-hand knowledge of what task types pay well, which fail QC, actual India onboarding experience
-3. Editorial authority to write "How to get approved on Outlier AI from India" — the highest-intent keyword in this niche
-4. FinAgentEval thesis background positions you to write credibly about RLHF, SFT, and AI evaluation — the exact terminology the serious annotators search for
+1. Enroll Toptal Referral Partners + Turing referrals (P1 — $100–$3,000/hire bounties, activate immediately)
+2. Personal referral link from your Outlier dashboard (P1 monetization, activate immediately)
+3. First-hand knowledge of what task types pay well, which fail QC, actual India onboarding experience
+4. Editorial authority to write "How to get approved on Outlier AI from India" — the highest-intent keyword in this niche
+5. FinAgentEval thesis background positions you to write credibly about RLHF, SFT, and AI evaluation — the exact terminology the serious annotators search for
 
 No generic aggregator can replicate this. This is the content moat that compounds.
 
