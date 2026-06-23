@@ -47,7 +47,7 @@ export function jobJsonLd(job: Job) {
     "@type": "JobPosting",
     title: job.title,
     description: job.description,
-    datePosted: job.postedAt.toISOString(),
+    datePosted: new Date(job.postedAt).toISOString(),
     hiringOrganization: {
       "@type": "Organization",
       name: job.company,
