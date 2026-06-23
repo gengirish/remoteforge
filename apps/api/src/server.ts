@@ -10,6 +10,7 @@ import {
   handleHealth,
   handleHome,
   handleIngest,
+  handleInternalStats,
   handleJobBySlug,
   handleJobSlugs,
   handleJobsGet,
@@ -150,6 +151,14 @@ app.get("/go/:id", async (c) => {
     return c.redirect(result.redirect, 302);
   }
   return c.json(result.body, result.status);
+});
+
+app.get("/api/internal/stats", async (c) => {
+  const { status, body } = await handleInternalStats(
+    c.req.header("X-Internal-Key"),
+    process.env.REMOTEFORGE_INTERNAL_KEY,
+  );
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT }, (info) => {

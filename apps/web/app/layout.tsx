@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
@@ -30,6 +31,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Script
+          defer
+          data-domain="remoteforge.in"
+          src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
         {clerkEnabled ? (
           <ClerkProvider>{body}</ClerkProvider>
         ) : (

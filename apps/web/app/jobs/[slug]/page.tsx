@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
 import { apiGoUrl } from "@/lib/api-url";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
+import { TrackClick } from "@/components/track-click";
 
 interface JobDetailPageProps {
   params: { slug: string };
@@ -65,9 +66,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         <div dangerouslySetInnerHTML={{ __html: job.description }} />
       </div>
       <div className="mt-8 flex flex-col gap-4">
-        <Button asChild size="lg" className="w-fit">
-          <a href={applyUrl}>Apply to this job →</a>
-        </Button>
+        <TrackClick eventName="Apply Click" props={{ company: job.company, tag: job.tags[0] ?? '' }}>
+          <Button asChild size="lg" className="w-fit">
+            <a href={applyUrl}>Apply to this job →</a>
+          </Button>
+        </TrackClick>
         <ScoreResumeCTA job={job} />
       </div>
       <div className="mt-8">

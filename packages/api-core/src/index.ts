@@ -8,6 +8,7 @@ export {
   handleHealth,
   handleHome,
   handleIngest,
+  handleInternalStats,
   handleJobBySlug,
   handleJobSlugs,
   handleJobsGet,

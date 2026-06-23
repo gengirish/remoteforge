@@ -13,11 +13,13 @@ function hashIp(ip: string): string {
 
 export async function handleHealth() {
   try {
-    const [jobs, gigs] = await Promise.all([
+    const [jobs, gigs, subscriberCount, weeklyClicks] = await Promise.all([
       prisma.job.count({ where: { isActive: true } }),
       prisma.gigPlatform.count({ where: { isActive: true } }),
+      prisma.subscriber.count(),
+      prisma.jobClick.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
     ]);
-    return { status: 200 as const, body: ok({ status: "healthy", database: "connected", jobs, gigs, timestamp: new Date().toISOString() }) };
+    return { status: 200 as const, body: ok({ status: "healthy", database: "connected", jobs, gigs, subscriberCount, weeklyClicks, timestamp: new Date().toISOString() }) };
   } catch (err) {
     return {
       status: 503 as const,
@@ -379,4 +381,52 @@ export async function handleJobSlugs() {
 export async function handleGigSlugs() {
   const platforms = await prisma.gigPlatform.findMany({ where: { isActive: true }, select: { slug: true } });
   return { status: 200 as const, body: ok(platforms.map((p) => p.slug)) };
+}
+
+export async function handleInternalStats(internalKey: string | undefined, configuredKey: string | undefined) {
+  if (!internalKey || internalKey !== configuredKey) {
+    return { status: 401 as const, body: fail("Unauthorized") };
+  }
+
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    totalJobClicks,
+    totalGigClicks,
+    jobClicksLast7,
+    gigClicksLast7,
+    subscriberCount,
+    featuredSlots,
+    topJobs,
+    topGigPlatforms,
+  ] = await Promise.all([
+    prisma.jobClick.count(),
+    prisma.gigClick.count(),
+    prisma.jobClick.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.gigClick.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.subscriber.count(),
+    prisma.featuredSlot.findMany({
+      where: { expiresAt: { gte: now } },
+      include: { job: { select: { title: true, company: true } } },
+    }),
+    prisma.jobClick.groupBy({ by: ["jobId"], _count: { id: true }, orderBy: { _count: { id: "desc" } }, take: 10 }),
+    prisma.gigClick.groupBy({ by: ["platformId"], _count: { id: true }, orderBy: { _count: { id: "desc" } }, take: 5 }),
+  ]);
+
+  return {
+    status: 200 as const,
+    body: ok({
+      clicks: { totalJobClicks, totalGigClicks, jobClicksLast7, gigClicksLast7 },
+      subscribers: subscriberCount,
+      featuredSlots: featuredSlots.map((s) => ({
+        jobTitle: s.job.title,
+        company: s.job.company,
+        expiresAt: s.expiresAt,
+        amountPaise: s.amountPaise,
+      })),
+      topJobs,
+      topGigPlatforms,
+    }),
+  };
 }
