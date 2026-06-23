@@ -60,3 +60,21 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+export interface CompanyProfileData {
+  id: string;
+  name: string;
+  slug: string;
+  totalJobsPosted: number;
+  indiaFriendlyCount: number;
+  indiaAcceptRate: number | null;
+  avgResponseDays: number | null;
+}
+
+export async function fetchCompaniesHiringIndia() {
+  return apiFetch<{ companies: CompanyProfileData[] }>("/api/companies/india");
+}
+
+export async function fetchCompanyBySlug(slug: string) {
+  return apiFetch<CompanyProfileData>(`/api/companies/${slug}`);
+}

@@ -86,6 +86,7 @@ model GigPlatform {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   clicks          GigClick[]
+  earningsReports GigEarningsReport[]
 
   @@index([type, isActive])
   @@index([indiaAccepted, isActive])
@@ -138,4 +139,45 @@ model ProductSetting {
   group       String   @default("affiliate")
   sortOrder   Int      @default(0)
   updatedAt   DateTime @updatedAt
+}
+
+// Added by Phase 1 Agent B — also present in Phase 1 worktree (resolve on merge)
+model CompanyProfile {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  slug               String   @unique
+  totalJobsPosted    Int      @default(0)
+  indiaFriendlyCount Int      @default(0)
+  indiaAcceptRate    Float?
+  avgResponseDays    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model SalaryReport {
+  id          String   @id @default(cuid())
+  role        String
+  roleSlug    String
+  company     String?
+  yearsExp    Int
+  salaryUsd   Int
+  city        String?
+  isVerified  Boolean  @default(false)
+  submittedAt DateTime @default(now())
+
+  @@index([roleSlug])
+  @@index([company])
+}
+
+model GigEarningsReport {
+  id               String      @id @default(cuid())
+  platformId       String
+  platform         GigPlatform @relation(fields: [platformId], references: [id])
+  taskType         String
+  hoursPerWeek     Int
+  earningsUsdMonth Int
+  city             String?
+  submittedAt      DateTime    @default(now())
+
+  @@index([platformId])
 }

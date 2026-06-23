@@ -482,3 +482,19 @@ export async function handleGigAffiliateUpdate(
 
   return { status: 200 as const, body: ok(updated) };
 }
+
+// CompanyProfile handlers — CompanyProfile model added by Phase 1 Agent B (also in this schema)
+export async function handleCompaniesIndia() {
+  const companies = await prisma.companyProfile.findMany({
+    where: { indiaFriendlyCount: { gt: 0 } },
+    orderBy: { indiaFriendlyCount: "desc" },
+    take: 50,
+  });
+  return { status: 200 as const, body: ok({ companies }) };
+}
+
+export async function handleGetCompanyBySlug(slug: string) {
+  const company = await prisma.companyProfile.findUnique({ where: { slug } });
+  if (!company) return { status: 404 as const, body: fail("Company not found") };
+  return { status: 200 as const, body: ok(company) };
+}

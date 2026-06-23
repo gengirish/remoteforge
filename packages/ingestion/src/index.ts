@@ -1,5 +1,6 @@
 import { loadAffiliateSettings, prisma } from "@intelliforge/db";
 import { normalizeJob } from "./processors/normalize-job";
+import { syncCompanyProfiles } from "./processors/company-profile";
 import { fetchRemotiveJobs } from "./sources/remotive";
 import { fetchRemoteOkJobs } from "./sources/remoteok";
 import { fetchWwrJobs } from "./sources/wwr";
@@ -73,8 +74,12 @@ export async function runIngestion(
   for (const source of sources) {
     results.push(await ingestSource(source));
   }
+  await syncCompanyProfiles().catch((e) =>
+    console.error("syncCompanyProfiles failed:", e),
+  );
   return results;
 }
 
 export { detectIndiaEligibility } from "./processors/india-check";
+export { syncCompanyProfiles } from "./processors/company-profile";
 export type { NormalizedJob } from "./sources/remotive";
