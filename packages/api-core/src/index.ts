@@ -27,5 +27,8 @@ export {
   handleToggleSavedJob,
   handleGetSavedJobs,
   handleUpsertApplication,
+  handleSubmitSalary,
+  handleSalaryByRole,
+  handleSalaryRoles,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

@@ -27,6 +27,9 @@ import {
   handleToggleSavedJob,
   handleGetSavedJobs,
   handleUpsertApplication,
+  handleSubmitSalary,
+  handleSalaryByRole,
+  handleSalaryRoles,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -244,6 +247,21 @@ app.get("/api/applications", async (c) => {
 
 app.get("/api/companies/:company/stats", async (c) => {
   const { status, body } = await handleCompanyStats(c.req.param("company"));
+
+// Salary Oracle — /api/salary/roles must precede /api/salary/:roleSlug
+app.post("/api/salary", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleSubmitSalary(body);
+  return c.json(res, status);
+});
+
+app.get("/api/salary/roles", async (c) => {
+  const { status, body } = await handleSalaryRoles();
+  return c.json(body, status);
+});
+
+app.get("/api/salary/:roleSlug", async (c) => {
+  const { status, body } = await handleSalaryByRole(c.req.param("roleSlug"));
   return c.json(body, status);
 });
 

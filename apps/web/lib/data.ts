@@ -144,3 +144,32 @@ export async function fetchUserApplications(clerkId: string): Promise<{ applicat
     return null;
   }
 }
+
+// ─── Salary Oracle ────────────────────────────────────────────────────────────
+
+export type SalaryData = {
+  roleSlug: string;
+  dataPoints: number;
+  median?: number;
+  p25?: number;
+  p75?: number;
+  avg?: number;
+  min?: number;
+  max?: number;
+  message?: string;
+};
+
+export type SalaryRole = {
+  roleSlug: string;
+  role: string;
+  _count: { id: number };
+};
+
+export async function fetchSalaryByRole(roleSlug: string): Promise<SalaryData | null> {
+  return apiFetch<SalaryData>(`/api/salary/${roleSlug}`);
+}
+
+export async function fetchSalaryRoles(): Promise<SalaryRole[] | null> {
+  const data = await apiFetch<{ roles: SalaryRole[] }>("/api/salary/roles");
+  return data?.roles ?? null;
+}
