@@ -86,6 +86,7 @@ model GigPlatform {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   clicks          GigClick[]
+  earningsReports GigEarningsReport[]
 
   @@index([type, isActive])
   @@index([indiaAccepted, isActive])
@@ -138,4 +139,156 @@ model ProductSetting {
   group       String   @default("affiliate")
   sortOrder   Int      @default(0)
   updatedAt   DateTime @updatedAt
+}
+
+// Phase 2 models (added by Phase 2 Agent A — duplicated here for Phase 4 relation integrity; resolve on merge)
+model UserProfile {
+  id              String    @id @default(cuid())
+  clerkId         String    @unique
+  email           String    @unique
+  displayName     String?
+  city            String?
+  skills          String[]
+  targetSalaryMin Int?
+  targetSalaryMax Int?
+  yearsExperience Int?
+  resumeUrl       String?
+  wantsRemote     Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  savedJobs       SavedJob[]
+  applications    ApplicationRecord[]
+  // Phase 4 relations
+  referralCode    ReferralCode?
+  referrals       Referral[]     @relation("ReferrerReferrals")
+  referredAs      Referral[]     @relation("RefereeReferral")
+  wallet          ReferralWallet?
+}
+
+model SavedJob {
+  id        String      @id @default(cuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [id])
+  jobId     String
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model ApplicationRecord {
+  id        String      @id @default(cuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [id])
+  jobId     String
+  company   String
+  status    String      @default("applied")
+  appliedAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  events    ApplicationEvent[]
+
+  @@unique([userId, jobId])
+}
+
+model ApplicationEvent {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   ApplicationRecord @relation(fields: [applicationId], references: [id])
+  status        String
+  note          String?
+  daysFromApply Int?
+  createdAt     DateTime          @default(now())
+}
+
+// Phase 3 models (added by Phase 3 Agent A — duplicated here for completeness; resolve on merge)
+model CompanyProfile {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  slug               String   @unique
+  totalJobsPosted    Int      @default(0)
+  indiaFriendlyCount Int      @default(0)
+  indiaAcceptRate    Float?
+  avgResponseDays    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model SalaryReport {
+  id          String   @id @default(cuid())
+  role        String
+  roleSlug    String
+  company     String?
+  yearsExp    Int
+  salaryUsd   Int
+  city        String?
+  isVerified  Boolean  @default(false)
+  submittedAt DateTime @default(now())
+
+  @@index([roleSlug])
+  @@index([company])
+}
+
+model GigEarningsReport {
+  id               String      @id @default(cuid())
+  platformId       String
+  platform         GigPlatform @relation(fields: [platformId], references: [id])
+  taskType         String
+  hoursPerWeek     Int
+  earningsUsdMonth Int
+  city             String?
+  submittedAt      DateTime    @default(now())
+
+  @@index([platformId])
+}
+
+// Phase 4 models
+model ReferralCode {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  user        UserProfile @relation(fields: [userId], references: [id])
+  code        String      @unique
+  clickCount  Int         @default(0)
+  signupCount Int         @default(0)
+  createdAt   DateTime    @default(now())
+}
+
+model Referral {
+  id            String       @id @default(cuid())
+  referrerId    String
+  referrer      UserProfile  @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  code          String
+  refereeUserId String?
+  referee       UserProfile? @relation("RefereeReferral", fields: [refereeUserId], references: [id])
+  status        String       @default("clicked")
+  rewardPaise   Int          @default(50000)
+  createdAt     DateTime     @default(now())
+  convertedAt   DateTime?
+
+  @@index([referrerId])
+  @@index([code])
+}
+
+model ReferralWallet {
+  id               String      @id @default(cuid())
+  userId           String      @unique
+  user             UserProfile @relation(fields: [userId], references: [id])
+  balancePaise     Int         @default(0)
+  totalEarnedPaise Int         @default(0)
+  updatedAt        DateTime    @updatedAt
+}
+
+model SuccessStory {
+  id           String   @id @default(cuid())
+  userId       String?
+  displayName  String
+  role         String
+  company      String
+  salaryUsd    Int?
+  city         String?
+  story        String
+  appliedCount Int?
+  isPublic     Boolean  @default(true)
+  isApproved   Boolean  @default(false)
+  submittedAt  DateTime @default(now())
+
+  @@index([isPublic, isApproved])
 }

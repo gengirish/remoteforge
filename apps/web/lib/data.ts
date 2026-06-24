@@ -60,3 +60,22 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+export type ReferralData = {
+  code: string;
+  clickCount: number;
+  signupCount: number;
+  shareUrl: string;
+  wallet: { balancePaise: number; totalEarnedPaise: number };
+  referrals: Array<{ status: string; createdAt: string; rewardPaise: number }>;
+};
+
+export async function fetchReferralCode(clerkId: string): Promise<ReferralData | null> {
+  const res = await fetch(`${getApiUrl()}/api/referral/code`, {
+    headers: { "X-Clerk-User-Id": clerkId },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as { success: boolean; data: ReferralData };
+  return json.success ? json.data : null;
+}

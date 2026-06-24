@@ -18,6 +18,10 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleGetReferralCode,
+  handleReferralClick,
+  handleReferralSignup,
+  handleReferralConvert,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -35,7 +39,7 @@ app.use(
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret", "X-Clerk-User-Id"],
   }),
 );
 
@@ -182,6 +186,28 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
   return c.json(res, status);
+});
+
+app.get("/api/referral/code", async (c) => {
+  const { status, body } = await handleGetReferralCode(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/referral/click", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleReferralClick(body);
+  return c.json(res, status);
+});
+
+app.post("/api/referral/signup", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleReferralSignup(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.post("/api/referral/convert", async (c) => {
+  const { status, body } = await handleReferralConvert(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {

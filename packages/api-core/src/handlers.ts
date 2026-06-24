@@ -482,3 +482,148 @@ export async function handleGigAffiliateUpdate(
 
   return { status: 200 as const, body: ok(updated) };
 }
+
+// ─── Phase 4: Referral Flywheel ───────────────────────────────────────────────
+
+function generateReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return "RF-" + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
+export async function handleGetReferralCode(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+
+  const profile = await prisma.userProfile.findUnique({
+    where: { clerkId },
+    include: { referralCode: true, wallet: true },
+  });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found") };
+
+  let referralCode = profile.referralCode;
+  if (!referralCode) {
+    let code = generateReferralCode();
+    while (await prisma.referralCode.findUnique({ where: { code } })) {
+      code = generateReferralCode();
+    }
+    referralCode = await prisma.referralCode.create({
+      data: { userId: profile.id, code },
+    });
+  }
+
+  const referrals = await prisma.referral.findMany({
+    where: { referrerId: profile.id },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+
+  return {
+    status: 200 as const,
+    body: ok({
+      code: referralCode.code,
+      clickCount: referralCode.clickCount,
+      signupCount: referralCode.signupCount,
+      wallet: profile.wallet ?? { balancePaise: 0, totalEarnedPaise: 0 },
+      referrals: referrals.map((r) => ({ status: r.status, createdAt: r.createdAt, rewardPaise: r.rewardPaise })),
+      shareUrl: `https://remoteforge.in/?ref=${referralCode.code}`,
+    }),
+  };
+}
+
+export async function handleReferralClick(body: unknown) {
+  const schema = z.object({ code: z.string().min(1) });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const refCode = await prisma.referralCode.findUnique({ where: { code: parsed.data.code } });
+  if (!refCode) return { status: 404 as const, body: fail("Invalid referral code") };
+
+  await Promise.all([
+    prisma.referralCode.update({
+      where: { code: parsed.data.code },
+      data: { clickCount: { increment: 1 } },
+    }),
+    prisma.referral.create({
+      data: { referrerId: refCode.userId, code: parsed.data.code, status: "clicked" },
+    }),
+  ]);
+
+  return { status: 200 as const, body: ok({ recorded: true }) };
+}
+
+export async function handleReferralSignup(body: unknown, clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const schema = z.object({ code: z.string().min(1) });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const profile = await prisma.userProfile.findUnique({ where: { clerkId } });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found") };
+
+  const referral = await prisma.referral.findFirst({
+    where: { code: parsed.data.code, status: "clicked", refereeUserId: null },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!referral) return { status: 200 as const, body: ok({ linked: false }) };
+  if (referral.referrerId === profile.id) return { status: 200 as const, body: ok({ linked: false }) };
+
+  await Promise.all([
+    prisma.referral.update({
+      where: { id: referral.id },
+      data: { refereeUserId: profile.id, status: "signed_up" },
+    }),
+    prisma.referralCode.update({
+      where: { code: parsed.data.code },
+      data: { signupCount: { increment: 1 } },
+    }),
+  ]);
+
+  return { status: 200 as const, body: ok({ linked: true }) };
+}
+
+export async function handleReferralConvert(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const profile = await prisma.userProfile.findUnique({ where: { clerkId } });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found") };
+
+  const referral = await prisma.referral.findFirst({
+    where: { refereeUserId: profile.id, status: "signed_up" },
+  });
+  if (!referral) return { status: 200 as const, body: ok({ rewarded: false }) };
+
+  await prisma.$transaction([
+    prisma.referral.update({
+      where: { id: referral.id },
+      data: { status: "converted", convertedAt: new Date() },
+    }),
+    prisma.referralWallet.upsert({
+      where: { userId: referral.referrerId },
+      create: { userId: referral.referrerId, balancePaise: referral.rewardPaise, totalEarnedPaise: referral.rewardPaise },
+      update: { balancePaise: { increment: referral.rewardPaise }, totalEarnedPaise: { increment: referral.rewardPaise } },
+    }),
+  ]);
+
+  return { status: 200 as const, body: ok({ rewarded: true, rewardPaise: referral.rewardPaise }) };
+}
+
+/**
+ * Award referral reward when a user submits their first application.
+ * Call this from handleUpsertApplication (Phase 2) after detecting isFirstApp === true.
+ */
+export async function maybeAwardReferralOnFirstApp(profileId: string): Promise<void> {
+  const pendingReferral = await prisma.referral.findFirst({
+    where: { refereeUserId: profileId, status: "signed_up" },
+  });
+  if (!pendingReferral) return;
+
+  await prisma.$transaction([
+    prisma.referral.update({
+      where: { id: pendingReferral.id },
+      data: { status: "converted", convertedAt: new Date() },
+    }),
+    prisma.referralWallet.upsert({
+      where: { userId: pendingReferral.referrerId },
+      create: { userId: pendingReferral.referrerId, balancePaise: pendingReferral.rewardPaise, totalEarnedPaise: pendingReferral.rewardPaise },
+      update: { balancePaise: { increment: pendingReferral.rewardPaise }, totalEarnedPaise: { increment: pendingReferral.rewardPaise } },
+    }),
+  ]);
+}
