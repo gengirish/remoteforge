@@ -260,6 +260,8 @@ app.get("/api/applications", async (c) => {
 
 app.get("/api/companies/:company/stats", async (c) => {
   const { status, body } = await handleCompanyStats(c.req.param("company"));
+  return c.json(body, status);
+});
 
 // Salary Oracle — /api/salary/roles must precede /api/salary/:roleSlug
 app.post("/api/salary", async (c) => {
