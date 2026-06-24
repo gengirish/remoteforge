@@ -8,4 +8,5 @@ export type {
   Subscriber,
   FeaturedSlot,
   ProductSetting,
+  CompanyProfile,
 } from "@prisma/client";

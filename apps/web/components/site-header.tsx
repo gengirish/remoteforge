@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+﻿import { auth } from "@clerk/nextjs/server";
 import { SiteHeaderInner } from "./site-header-inner";
 
 export async function SiteHeader() {

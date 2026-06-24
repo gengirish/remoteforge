@@ -380,6 +380,15 @@ export async function handleJobSlugs() {
   return { status: 200 as const, body: ok(jobs.map((j) => j.slug)) };
 }
 
+export async function handleCompaniesIndia() {
+  const companies = await prisma.companyProfile.findMany({
+    where: { indiaFriendlyCount: { gt: 0 } },
+    orderBy: { indiaFriendlyCount: "desc" },
+    take: 50,
+  });
+  return { status: 200 as const, body: ok({ companies }) };
+}
+
 export async function handleGigSlugs() {
   const platforms = await prisma.gigPlatform.findMany({ where: { isActive: true }, select: { slug: true } });
   return { status: 200 as const, body: ok(platforms.map((p) => p.slug)) };

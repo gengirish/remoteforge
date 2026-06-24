@@ -26,10 +26,12 @@ model Job {
   sourceId      String
   sourceUrl     String
   affiliateUrl  String?
-  isActive      Boolean   @default(true)
-  isFeatured    Boolean   @default(false)
-  indiaFriendly Boolean   @default(true)
-  postedAt      DateTime
+  isActive          Boolean   @default(true)
+  isFeatured        Boolean   @default(false)
+  indiaFriendly     Boolean   @default(true)
+  timezoneFriendly  Boolean   @default(false)
+  visaSponsorship   Boolean   @default(false)
+  postedAt          DateTime
   expiresAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -117,6 +119,20 @@ model Subscriber {
   source         String   @default("web")
   isVerified     Boolean  @default(false)
   createdAt      DateTime @default(now())
+}
+
+model CompanyProfile {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  slug               String   @unique
+  totalJobsPosted    Int      @default(0)
+  indiaFriendlyCount Int      @default(0)
+  indiaAcceptRate    Float?
+  avgResponseDays    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([indiaFriendlyCount(sort: Desc)])
 }
 
 model FeaturedSlot {

@@ -1,4 +1,4 @@
-import type { GigPlatform, Job } from "@intelliforge/db";
+import type { CompanyProfile, GigPlatform, Job } from "@intelliforge/db";
 import type { ApiResponse } from "./api";
 import { getApiUrl } from "./api-url";
 
@@ -75,4 +75,8 @@ export async function fetchAllTags(): Promise<string[]> {
 
 export async function fetchAllCategories(): Promise<string[]> {
   return ["engineering", "design", "marketing", "sales", "support", "writing", "product"];
+}
+
+export async function fetchCompaniesHiringIndia() {
+  return apiFetch<{ companies: CompanyProfile[] }>("/api/companies/india");
 }
