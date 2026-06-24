@@ -60,3 +60,31 @@ export async function fetchIndiaGigAlternatives() {
   const data = await fetchGigPlatforms({ indiaOnly: "true", limit: "3" });
   return data?.platforms ?? [];
 }
+
+export async function fetchEmployerProfile(clerkId: string) {
+  return apiFetch<{
+    id: string;
+    companyName: string;
+    companySlug: string;
+    indiaBadge: boolean;
+    subscriptionTier: string;
+    jobs: { id: string; title: string; slug: string; isActive: boolean; postedAt: string }[];
+    subscription: { tier: string; expiresAt: string } | null;
+  }>("/api/employer/me", {
+    headers: { "X-Clerk-User-Id": clerkId },
+    cache: "no-store",
+  });
+}
+
+export async function fetchTalentReport(clerkId: string) {
+  return apiFetch<{
+    topSkills: { skill: string; count: number }[];
+    salaryByRole: { roleSlug: string; role: string; _avg: { salaryUsd: number }; _count: { id: number } }[];
+    companyComparison: { name: string; indiaAcceptRate: number; totalJobsPosted: number; avgResponseDays: number }[];
+    isSubscriber: boolean;
+    generatedAt: string;
+  }>("/api/employer/talent-report", {
+    headers: { "X-Clerk-User-Id": clerkId },
+    cache: "no-store",
+  });
+}

@@ -8,4 +8,10 @@ export type {
   Subscriber,
   FeaturedSlot,
   ProductSetting,
+  EmployerProfile,
+  DirectJobPosting,
+  EmployerSubscription,
+  PremiumSubscription,
+  ApiKey,
+  ApiKeyUsage,
 } from "@prisma/client";

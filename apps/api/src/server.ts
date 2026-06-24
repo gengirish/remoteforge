@@ -18,6 +18,12 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleEmployerOnboard,
+  handleGetEmployer,
+  handlePostDirectJob,
+  handleTalentReport,
+  handleEmployerSubscription,
+  handleGetEmployerByCompanySlug,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -35,7 +41,7 @@ app.use(
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret", "X-Clerk-User-Id"],
   }),
 );
 
@@ -182,6 +188,40 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
   return c.json(res, status);
+});
+
+// ─── Employer routes ─────────────────────────────────────────────────────────
+
+app.get("/api/employer/by-slug/:slug", async (c) => {
+  const { status, body } = await handleGetEmployerByCompanySlug(c.req.param("slug"));
+  return c.json(body, status);
+});
+
+app.post("/api/employer/onboard", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleEmployerOnboard(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/employer/me", async (c) => {
+  const { status, body } = await handleGetEmployer(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/employer/jobs", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handlePostDirectJob(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/employer/talent-report", async (c) => {
+  const { status, body } = await handleTalentReport(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/employer/subscription", async (c) => {
+  const { status, body } = await handleEmployerSubscription(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {
