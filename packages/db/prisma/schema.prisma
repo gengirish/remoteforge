@@ -26,17 +26,17 @@ model Job {
   sourceId      String
   sourceUrl     String
   affiliateUrl  String?
-  isActive          Boolean   @default(true)
-  isFeatured        Boolean   @default(false)
-  indiaFriendly     Boolean   @default(true)
-  timezoneFriendly  Boolean   @default(false)
-  visaSponsorship   Boolean   @default(false)
-  postedAt          DateTime
+  isActive      Boolean   @default(true)
+  isFeatured    Boolean   @default(false)
+  indiaFriendly Boolean   @default(true)
+  postedAt      DateTime
   expiresAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   clicks        JobClick[]
   featuredSlot  FeaturedSlot?
+  savedBy       SavedJob[]
+  applications  ApplicationRecord[]
 
   @@unique([sourceBoard, sourceId])
   @@index([category, isActive])
@@ -121,20 +121,6 @@ model Subscriber {
   createdAt      DateTime @default(now())
 }
 
-model CompanyProfile {
-  id                 String   @id @default(cuid())
-  name               String   @unique
-  slug               String   @unique
-  totalJobsPosted    Int      @default(0)
-  indiaFriendlyCount Int      @default(0)
-  indiaAcceptRate    Float?
-  avgResponseDays    Float?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([indiaFriendlyCount(sort: Desc)])
-}
-
 model FeaturedSlot {
   id          String   @id @default(cuid())
   jobId       String   @unique
@@ -154,4 +140,58 @@ model ProductSetting {
   group       String   @default("affiliate")
   sortOrder   Int      @default(0)
   updatedAt   DateTime @updatedAt
+}
+
+model UserProfile {
+  id              String              @id @default(cuid())
+  clerkId         String              @unique
+  email           String              @unique
+  displayName     String?
+  city            String?
+  skills          String[]
+  targetSalaryMin Int?
+  targetSalaryMax Int?
+  yearsExperience Int?
+  resumeUrl       String?
+  wantsRemote     Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  savedJobs       SavedJob[]
+  applications    ApplicationRecord[]
+}
+
+model SavedJob {
+  id        String      @id @default(cuid())
+  userId    String
+  user      UserProfile @relation(fields: [userId], references: [id])
+  jobId     String
+  job       Job         @relation(fields: [jobId], references: [id])
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, jobId])
+}
+
+model ApplicationRecord {
+  id        String             @id @default(cuid())
+  userId    String
+  user      UserProfile        @relation(fields: [userId], references: [id])
+  jobId     String
+  job       Job                @relation(fields: [jobId], references: [id])
+  company   String
+  status    String             @default("applied")
+  appliedAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  events    ApplicationEvent[]
+
+  @@unique([userId, jobId])
+}
+
+model ApplicationEvent {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   ApplicationRecord @relation(fields: [applicationId], references: [id])
+  status        String
+  note          String?
+  daysFromApply Int?
+  createdAt     DateTime          @default(now())
 }

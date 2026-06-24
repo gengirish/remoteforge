@@ -197,6 +197,7 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
   return c.json(res, status);
 });
 
+
 app.get("/api/user/profile", async (c) => {
   const { status, body } = await handleGetProfile(c.req.header("X-Clerk-User-Id"));
   return c.json(body, status);

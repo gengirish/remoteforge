@@ -9,4 +9,8 @@ export type {
   FeaturedSlot,
   ProductSetting,
   CompanyProfile,
+  UserProfile,
+  SavedJob,
+  ApplicationRecord,
+  ApplicationEvent,
 } from "@prisma/client";

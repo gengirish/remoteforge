@@ -541,3 +541,58 @@ export async function handleGigAffiliateUpdate(
 
   return { status: 200 as const, body: ok(updated) };
 }
+
+const upsertProfileSchema = z.object({
+  email: z.string().email(),
+  displayName: z.string().optional(),
+  city: z.string().optional(),
+  skills: z.array(z.string()).default([]),
+  targetSalaryMin: z.number().int().optional(),
+  targetSalaryMax: z.number().int().optional(),
+  yearsExperience: z.number().int().min(0).max(50).optional(),
+});
+
+export async function handleUpsertProfile(body: unknown, clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const parsed = upsertProfileSchema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+  const profile = await (prisma as any).userProfile.upsert({
+    where: { clerkId },
+    create: { clerkId, ...parsed.data },
+    update: parsed.data,
+  });
+  return { status: 200 as const, body: ok(profile) };
+}
+
+export async function handleGetProfile(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const profile = await (prisma as any).userProfile.findUnique({ where: { clerkId } });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found") };
+  return { status: 200 as const, body: ok(profile) };
+}
+
+export async function handleToggleSavedJob(clerkId: string | undefined, jobId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  if (!jobId) return { status: 400 as const, body: fail("jobId required") };
+  const profile = await (prisma as any).userProfile.findUnique({ where: { clerkId } });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found") };
+  const existing = await (prisma as any).savedJob.findUnique({
+    where: { userId_jobId: { userId: profile.id, jobId } },
+  });
+  if (existing) {
+    await (prisma as any).savedJob.delete({ where: { id: existing.id } });
+    return { status: 200 as const, body: ok({ saved: false }) };
+  }
+  await (prisma as any).savedJob.create({ data: { userId: profile.id, jobId } });
+  return { status: 200 as const, body: ok({ saved: true }) };
+}
+
+export async function handleGetSavedJobs(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const profile = await (prisma as any).userProfile.findUnique({
+    where: { clerkId },
+    include: { savedJobs: { include: { job: true }, orderBy: { createdAt: "desc" } } },
+  });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found") };
+  return { status: 200 as const, body: ok({ jobs: profile.savedJobs.map((s: any) => s.job) }) };
+}
