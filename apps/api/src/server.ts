@@ -18,6 +18,8 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handlePremiumStatus,
+  handlePremiumCheckout,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -182,6 +184,16 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
   return c.json(res, status);
+});
+
+app.get("/api/premium/status", async (c) => {
+  const { status, body } = await handlePremiumStatus(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/premium/checkout", async (c) => {
+  const { status, body } = await handlePremiumCheckout(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {

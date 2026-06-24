@@ -16,5 +16,7 @@ export {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handlePremiumStatus,
+  handlePremiumCheckout,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";
