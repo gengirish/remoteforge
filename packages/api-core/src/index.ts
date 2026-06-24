@@ -48,5 +48,7 @@ export {
   handleTalentReport,
   handleEmployerSubscription,
   handleGetEmployerByCompanySlug,
+  handlePremiumStatus,
+  handlePremiumCheckout,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

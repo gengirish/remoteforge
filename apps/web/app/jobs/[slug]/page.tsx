@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2 } from "lucide-react";
 import { ApplyTrackButton } from "@/components/apply-track-button";
+import { auth } from "@clerk/nextjs/server";
 import { EmployerUpsellBanner } from "@/components/employer-upsell-banner";
 import { FeaturedCheckout } from "@/components/featured-checkout";
 import { IndiaBadge } from "@/components/india-badge";
 import { ScoreResumeCTA } from "@/components/job-card-cta";
 import { SalaryBadge } from "@/components/salary-badge";
+import { Button } from "@/components/ui/button";
+import { CoverLetterGenerator } from "@/components/cover-letter-generator";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
 import { apiGoUrl } from "@/lib/api-url";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
@@ -33,6 +36,38 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const jsonLd = jobJsonLd(job);
   const applyUrl = apiGoUrl(job.id, { type: "job", clickType: "apply" });
   const initial = job.company.charAt(0).toUpperCase();
+
+  let isPremium = false;
+  let userSkills: string[] = [];
+  let userExperience = 0;
+  try {
+    const { userId } = await auth();
+    if (userId) {
+      const [premiumRes, profileRes] = await Promise.all([
+        fetch(`${process.env.API_URL}/api/premium/status`, {
+          headers: { "X-Clerk-User-Id": userId },
+          cache: "no-store",
+        }),
+        fetch(`${process.env.API_URL}/api/user/profile`, {
+          headers: { "X-Clerk-User-Id": userId },
+          cache: "no-store",
+        }),
+      ]);
+      if (premiumRes.ok) {
+        const pd = (await premiumRes.json()) as { data: { isPremium: boolean } };
+        isPremium = pd.data?.isPremium ?? false;
+      }
+      if (profileRes.ok) {
+        const prof = (await profileRes.json()) as {
+          data: { skills: string[]; yearsExperience: number };
+        };
+        userSkills = prof.data?.skills ?? [];
+        userExperience = prof.data?.yearsExperience ?? 0;
+      }
+    }
+  } catch {
+    // Clerk not configured in dev — skip
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -98,6 +133,17 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
             />
             <ScoreResumeCTA job={job} />
+          </div>
+
+          <div className="mt-6">
+            <CoverLetterGenerator
+              jobTitle={job.title}
+              company={job.company}
+              jobDescription={job.description.slice(0, 1000)}
+              userSkills={userSkills}
+              userExperience={userExperience}
+              isPremium={isPremium}
+            />
           </div>
         </div>
       </article>

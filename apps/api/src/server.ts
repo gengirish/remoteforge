@@ -48,6 +48,8 @@ import {
   handleTalentReport,
   handleEmployerSubscription,
   handleGetEmployerByCompanySlug,
+  handlePremiumStatus,
+  handlePremiumCheckout,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -376,6 +378,16 @@ app.get("/api/employer/talent-report", async (c) => {
 
 app.post("/api/employer/subscription", async (c) => {
   const { status, body } = await handleEmployerSubscription(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.get("/api/premium/status", async (c) => {
+  const { status, body } = await handlePremiumStatus(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/premium/checkout", async (c) => {
+  const { status, body } = await handlePremiumCheckout(c.req.header("X-Clerk-User-Id"));
   return c.json(body, status);
 });
 

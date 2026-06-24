@@ -310,7 +310,7 @@ export async function handleRazorpayWebhook(rawBody: string, signature: string) 
         entity: {
           id: string;
           amount: number;
-          notes?: { jobId?: string; employerId?: string; type?: string };
+          notes?: { jobId?: string; employerId?: string; userId?: string; clerkId?: string; type?: string };
         };
       };
     };
@@ -350,6 +350,18 @@ export async function handleRazorpayWebhook(rawBody: string, signature: string) 
           data: { subscriptionTier: "starter" },
         });
       }
+    } else if (noteType === "premium_subscription") {
+      const { userId, clerkId } = payment.notes as { userId?: string; clerkId?: string };
+      if (userId && clerkId) {
+        const startsAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        await (prisma as any).premiumSubscription.upsert({
+          where: { clerkId },
+          create: { userId, clerkId, razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
+          update: { razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
+        });
+      }
     } else {
       const jobId = payment.notes?.jobId;
       if (jobId) {
@@ -369,6 +381,46 @@ export async function handleRazorpayWebhook(rawBody: string, signature: string) 
   }
 
   return { status: 200 as const, body: ok({ received: true }) };
+}
+
+// GET /api/premium/status
+export async function handlePremiumStatus(clerkId: string | undefined) {
+  if (!clerkId) return { status: 200 as const, body: ok({ isPremium: false, expiresAt: null }) };
+  const sub = await (prisma as any).premiumSubscription.findUnique({
+    where: { clerkId },
+    select: { expiresAt: true, startsAt: true },
+  });
+  const isPremium = sub && new Date(sub.expiresAt) > new Date();
+  return { status: 200 as const, body: ok({ isPremium: Boolean(isPremium), expiresAt: sub?.expiresAt ?? null }) };
+}
+
+// POST /api/premium/checkout
+const PREMIUM_AMOUNT_PAISE = 49900;
+export async function handlePremiumCheckout(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) return { status: 503 as const, body: fail("Razorpay not configured") };
+
+  const profile = await prisma.userProfile.findUnique({ where: { clerkId }, select: { id: true, email: true } });
+  if (!profile) return { status: 404 as const, body: fail("Complete your profile first") };
+
+  const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
+    },
+    body: JSON.stringify({
+      amount: PREMIUM_AMOUNT_PAISE,
+      currency: "INR",
+      receipt: `prem_${profile.id.slice(0, 8)}`,
+      notes: { userId: profile.id, clerkId, type: "premium_subscription" },
+    }),
+  });
+  if (!orderRes.ok) return { status: 502 as const, body: fail(await orderRes.text()) };
+  const order = (await orderRes.json()) as { id: string; amount: number };
+  return { status: 200 as const, body: ok({ orderId: order.id, amount: order.amount, currency: "INR", keyId }) };
 }
 
 export async function handleGoRedirect(
