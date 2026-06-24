@@ -50,5 +50,11 @@ export {
   handleGetEmployerByCompanySlug,
   handlePremiumStatus,
   handlePremiumCheckout,
+  handleCreateApiKey,
+  handleV2Salary,
+  handleV2Companies,
+  handleV2Skills,
+  handleV2Usage,
+  verifyApiKey,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

@@ -7,6 +7,7 @@ import {
   handleCompanyStats,
   handleCompaniesIndia,
   handleGetCompanyBySlug,
+  handleCreateApiKey,
   handleDigest,
   handleFeaturedCreateOrder,
   handleGigAffiliateUpdate,
@@ -50,6 +51,10 @@ import {
   handleGetEmployerByCompanySlug,
   handlePremiumStatus,
   handlePremiumCheckout,
+  handleV2Companies,
+  handleV2Salary,
+  handleV2Skills,
+  handleV2Usage,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -388,6 +393,35 @@ app.get("/api/premium/status", async (c) => {
 
 app.post("/api/premium/checkout", async (c) => {
   const { status, body } = await handlePremiumCheckout(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+// ── B2B Data API v2 ──────────────────────────────────────────────────────────
+app.post("/api/v2/keys", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleCreateApiKey(body);
+  return c.json(res, status);
+});
+
+app.get("/api/v2/salary", async (c) => {
+  const roleSlug = c.req.query("role") ?? undefined;
+  const { status, body } = await handleV2Salary(c.req.header("Authorization"), roleSlug);
+  return c.json(body, status);
+});
+
+app.get("/api/v2/companies", async (c) => {
+  const company = c.req.query("company") ?? undefined;
+  const { status, body } = await handleV2Companies(c.req.header("Authorization"), company);
+  return c.json(body, status);
+});
+
+app.get("/api/v2/skills", async (c) => {
+  const { status, body } = await handleV2Skills(c.req.header("Authorization"));
+  return c.json(body, status);
+});
+
+app.get("/api/v2/usage", async (c) => {
+  const { status, body } = await handleV2Usage(c.req.header("Authorization"));
   return c.json(body, status);
 });
 
