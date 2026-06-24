@@ -42,22 +42,45 @@ export function gigsListingMetadata(): Metadata {
 }
 
 export function jobJsonLd(job: Job) {
+  const postedDate = new Date(job.postedAt);
+  const validThrough = new Date(postedDate);
+  validThrough.setDate(validThrough.getDate() + 60);
+
+  const jobLocations = [
+    { "@type": "Place", address: { "@type": "PostalAddress", addressCountry: "TELECOMMUTE" } },
+    ...(job.indiaFriendly
+      ? [{ "@type": "Place", address: { "@type": "PostalAddress", addressCountry: "IN" } }]
+      : []),
+  ];
+
   return {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: job.title,
     description: job.description,
-    datePosted: new Date(job.postedAt).toISOString(),
+    datePosted: postedDate.toISOString(),
+    validThrough: validThrough.toISOString(),
     hiringOrganization: {
       "@type": "Organization",
       name: job.company,
     },
-    jobLocation: {
-      "@type": "Place",
-      address: { "@type": "PostalAddress", addressCountry: "IN" },
-    },
+    jobLocation: jobLocations,
+    jobLocationType: "TELECOMMUTE",
     employmentType: "FULL_TIME",
-    workHours: "Remote",
+    ...(job.salaryMin
+      ? {
+          baseSalary: {
+            "@type": "MonetaryAmount",
+            currency: "USD",
+            value: {
+              "@type": "QuantitativeValue",
+              minValue: job.salaryMin,
+              maxValue: job.salaryMax ?? job.salaryMin,
+              unitText: "YEAR",
+            },
+          },
+        }
+      : {}),
   };
 }
 
