@@ -80,3 +80,25 @@ export async function fetchAllCategories(): Promise<string[]> {
 export async function fetchCompaniesHiringIndia() {
   return apiFetch<{ companies: CompanyProfile[] }>("/api/companies/india");
 }
+
+type InternalStats = {
+  clicks: { totalJobClicks: number; totalGigClicks: number; jobClicksLast7: number; gigClicksLast7: number };
+  subscribers: number;
+  featuredSlots: { jobTitle: string; company: string; expiresAt: string; amountPaise: number }[];
+  topJobs: { jobId: string; _count: { id: number } }[];
+  topGigPlatforms: { platformId: string; _count: { id: number } }[];
+};
+
+export async function fetchInternalStats(): Promise<InternalStats | null> {
+  try {
+    const res = await fetch(`${getApiUrl()}/api/internal/stats`, {
+      headers: { "X-Internal-Key": process.env.REMOTEFORGE_INTERNAL_KEY ?? "" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { success: boolean; data?: InternalStats };
+    return json.data ?? null;
+  } catch {
+    return null;
+  }
+}

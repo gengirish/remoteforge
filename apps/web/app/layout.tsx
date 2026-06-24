@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Sora, Source_Sans_3 } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
@@ -46,6 +47,12 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
+        <Script
+          defer
+          data-domain="remoteforge.in"
+          src="https://plausible.io/js/script.js"
+          strategy="afterInteractive"
+        />
         {clerkEnabled ? (
           <ClerkProvider>{body}</ClerkProvider>
         ) : (
