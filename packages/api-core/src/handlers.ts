@@ -305,24 +305,66 @@ export async function handleRazorpayWebhook(rawBody: string, signature: string) 
 
   const event = JSON.parse(rawBody) as {
     event: string;
-    payload: { payment?: { entity: { id: string; amount: number; notes?: { jobId?: string } } } };
+    payload: {
+      payment?: {
+        entity: {
+          id: string;
+          amount: number;
+          notes?: { jobId?: string; employerId?: string; type?: string };
+        };
+      };
+    };
   };
 
   if (event.event === "payment.captured") {
     const payment = event.payload.payment?.entity;
-    const jobId = payment?.notes?.jobId;
-    if (payment && jobId) {
-      const startsAt = new Date();
-      const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1);
-      await prisma.$transaction([
-        prisma.featuredSlot.upsert({
-          where: { jobId },
-          create: { jobId, razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
-          update: { razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
-        }),
-        prisma.job.update({ where: { id: jobId }, data: { isFeatured: true } }),
-      ]);
+    if (!payment) return { status: 200 as const, body: ok({ received: true }) };
+
+    const noteType = payment.notes?.type;
+
+    if (noteType === "employer_subscription") {
+      const employerId = payment.notes?.employerId;
+      if (employerId) {
+        const startsAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        await prisma.employerSubscription.upsert({
+          where: { employerId },
+          create: {
+            employerId,
+            razorpayId: payment.id,
+            amountPaise: payment.amount,
+            tier: "starter",
+            startsAt,
+            expiresAt,
+          },
+          update: {
+            razorpayId: payment.id,
+            amountPaise: payment.amount,
+            startsAt,
+            expiresAt,
+          },
+        });
+        await prisma.employerProfile.update({
+          where: { id: employerId },
+          data: { subscriptionTier: "starter" },
+        });
+      }
+    } else {
+      const jobId = payment.notes?.jobId;
+      if (jobId) {
+        const startsAt = new Date();
+        const expiresAt = new Date();
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+        await prisma.$transaction([
+          prisma.featuredSlot.upsert({
+            where: { jobId },
+            create: { jobId, razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
+            update: { razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
+          }),
+          prisma.job.update({ where: { id: jobId }, data: { isFeatured: true } }),
+        ]);
+      }
     }
   }
 
@@ -954,6 +996,130 @@ export async function handleGetReferralCode(clerkId: string | undefined) {
   };
 }
 
+// ─── Phase 5: Employer SaaS ────────────────────────────────────────────────
+
+export async function handleEmployerOnboard(body: unknown, clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const schema = z.object({
+    email: z.string().email(),
+    companyName: z.string().min(2).max(100),
+    website: z.string().url().optional(),
+    description: z.string().max(500).optional(),
+  });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const companySlug = parsed.data.companyName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  const employer = await prisma.employerProfile.upsert({
+    where: { clerkId },
+    create: { clerkId, companySlug, ...parsed.data },
+    update: {
+      companyName: parsed.data.companyName,
+      website: parsed.data.website,
+      description: parsed.data.description,
+    },
+  });
+  return { status: 200 as const, body: ok(employer) };
+}
+
+export async function handleGetEmployer(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const employer = await prisma.employerProfile.findUnique({
+    where: { clerkId },
+    include: {
+      jobs: { where: { isActive: true }, orderBy: { postedAt: "desc" } },
+      subscription: true,
+    },
+  });
+  if (!employer) return { status: 404 as const, body: fail("Employer profile not found") };
+  return { status: 200 as const, body: ok(employer) };
+}
+
+export async function handlePostDirectJob(body: unknown, clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const employer = await prisma.employerProfile.findUnique({ where: { clerkId } });
+  if (!employer) return { status: 404 as const, body: fail("Employer profile not found") };
+
+  const schema = z.object({
+    title: z.string().min(3).max(150),
+    description: z.string().min(50),
+    tags: z.array(z.string()).default([]),
+    salaryMin: z.number().int().optional(),
+    salaryMax: z.number().int().optional(),
+    currency: z.string().default("USD"),
+    indiaFriendly: z.boolean().default(true),
+    applyUrl: z.string().url().optional(),
+  });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const base = parsed.data.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const slug = `${base}-${employer.companySlug}-${Date.now()}`;
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30);
+
+  const job = await prisma.directJobPosting.create({
+    data: { employerId: employer.id, slug, expiresAt, ...parsed.data },
+  });
+  return { status: 200 as const, body: ok(job) };
+}
+
+export async function handleTalentReport(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const employer = await prisma.employerProfile.findUnique({ where: { clerkId } });
+  if (!employer) return { status: 404 as const, body: fail("Employer profile not found") };
+
+  const [topSkillsJobs, salaryByRole, companyComparison] = await Promise.all([
+    prisma.job.findMany({
+      where: { isActive: true, indiaFriendly: true },
+      select: { tags: true },
+      take: 500,
+    }),
+    (prisma as any).salaryReport?.groupBy({
+      by: ["roleSlug", "role"],
+      _avg: { salaryUsd: true },
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" as const } },
+      take: 10,
+    }).catch(() => []),
+    (prisma as any).companyProfile?.findMany({
+      where: { indiaFriendlyCount: { gt: 0 } },
+      orderBy: { indiaAcceptRate: "desc" },
+      take: 10,
+      select: { name: true, indiaAcceptRate: true, totalJobsPosted: true, avgResponseDays: true },
+    }).catch(() => []),
+  ]);
+
+  const skillMap = new Map<string, number>();
+  for (const job of topSkillsJobs) {
+    for (const tag of job.tags) {
+      skillMap.set(tag, (skillMap.get(tag) ?? 0) + 1);
+    }
+  }
+  const topSkills = [...skillMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([skill, count]) => ({ skill, count }));
+
+  return {
+    status: 200 as const,
+    body: ok({
+      topSkills,
+      salaryByRole: salaryByRole ?? [],
+      companyComparison: companyComparison ?? [],
+      isSubscriber: employer.subscriptionTier !== "free",
+      generatedAt: new Date().toISOString(),
+    }),
+  };
+}
+
 export async function handleSalaryRoles() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const roles = await (prisma as any).salaryReport.groupBy({
@@ -1068,4 +1234,50 @@ export async function maybeAwardReferralOnFirstApp(profileId: string): Promise<v
       update: { balancePaise: { increment: pendingReferral.rewardPaise }, totalEarnedPaise: { increment: pendingReferral.rewardPaise } },
     }),
   ]);
+}
+
+const EMPLOYER_STARTER_PAISE = 299_900; // ₹2,999/month
+
+export async function handleEmployerSubscription(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) return { status: 503 as const, body: fail("Razorpay not configured") };
+
+  const employer = await prisma.employerProfile.findUnique({ where: { clerkId } });
+  if (!employer) return { status: 404 as const, body: fail("Employer profile not found — onboard first") };
+
+  const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
+    },
+    body: JSON.stringify({
+      amount: EMPLOYER_STARTER_PAISE,
+      currency: "INR",
+      receipt: `emp_${employer.id.slice(0, 8)}`,
+      notes: { employerId: employer.id, type: "employer_subscription" },
+    }),
+  });
+  if (!orderRes.ok) return { status: 502 as const, body: fail(await orderRes.text()) };
+  const order = (await orderRes.json()) as { id: string; amount: number };
+  return {
+    status: 200 as const,
+    body: ok({ orderId: order.id, amount: order.amount, currency: "INR", keyId }),
+  };
+}
+
+export async function handleGetEmployerByCompanySlug(slug: string) {
+  const employer = await prisma.employerProfile.findUnique({
+    where: { companySlug: slug },
+    select: {
+      companyName: true,
+      indiaBadge: true,
+      subscriptionTier: true,
+      description: true,
+      website: true,
+    },
+  });
+  return { status: 200 as const, body: ok({ employer: employer ?? null }) };
 }

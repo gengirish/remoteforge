@@ -42,6 +42,12 @@ import {
   handleGetSuccessStories,
   handleSubmitSuccessStory,
   handleIndiaIncomeReport,
+  handleEmployerOnboard,
+  handleGetEmployer,
+  handlePostDirectJob,
+  handleTalentReport,
+  handleEmployerSubscription,
+  handleGetEmployerByCompanySlug,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -336,6 +342,40 @@ app.post("/api/community/wins", async (c) => {
 
 app.get("/api/community/income-report", async (c) => {
   const { status, body } = await handleIndiaIncomeReport();
+  return c.json(body, status);
+});
+
+// ─── Employer routes ─────────────────────────────────────────────────────────
+
+app.get("/api/employer/by-slug/:slug", async (c) => {
+  const { status, body } = await handleGetEmployerByCompanySlug(c.req.param("slug"));
+  return c.json(body, status);
+});
+
+app.post("/api/employer/onboard", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleEmployerOnboard(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/employer/me", async (c) => {
+  const { status, body } = await handleGetEmployer(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/employer/jobs", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handlePostDirectJob(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/employer/talent-report", async (c) => {
+  const { status, body } = await handleTalentReport(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.post("/api/employer/subscription", async (c) => {
+  const { status, body } = await handleEmployerSubscription(c.req.header("X-Clerk-User-Id"));
   return c.json(body, status);
 });
 

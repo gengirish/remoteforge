@@ -19,4 +19,10 @@ export type {
   Referral,
   ReferralWallet,
   SuccessStory,
+  EmployerProfile,
+  DirectJobPosting,
+  EmployerSubscription,
+  PremiumSubscription,
+  ApiKey,
+  ApiKeyUsage,
 } from "@prisma/client";

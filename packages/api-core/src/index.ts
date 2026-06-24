@@ -42,5 +42,11 @@ export {
   handleGetSuccessStories,
   handleSubmitSuccessStory,
   handleIndiaIncomeReport,
+  handleEmployerOnboard,
+  handleGetEmployer,
+  handlePostDirectJob,
+  handleTalentReport,
+  handleEmployerSubscription,
+  handleGetEmployerByCompanySlug,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

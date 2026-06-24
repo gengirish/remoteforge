@@ -295,3 +295,89 @@ model SuccessStory {
 
   @@index([isPublic, isApproved])
 }
+
+// Phase 5 models
+model EmployerProfile {
+  id               String                @id @default(cuid())
+  clerkId          String                @unique
+  email            String                @unique
+  companyName      String
+  companySlug      String                @unique
+  website          String?
+  description      String?
+  logoUrl          String?
+  indiaBadge       Boolean               @default(false)
+  subscriptionTier String                @default("free")
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  jobs             DirectJobPosting[]
+  subscription     EmployerSubscription?
+}
+
+model DirectJobPosting {
+  id            String          @id @default(cuid())
+  employerId    String
+  employer      EmployerProfile @relation(fields: [employerId], references: [id])
+  title         String
+  description   String
+  tags          String[]
+  salaryMin     Int?
+  salaryMax     Int?
+  currency      String          @default("USD")
+  indiaFriendly Boolean         @default(true)
+  isActive      Boolean         @default(true)
+  postedAt      DateTime        @default(now())
+  expiresAt     DateTime?
+  slug          String          @unique
+  applyUrl      String?
+
+  @@index([employerId, isActive])
+  @@index([isActive, postedAt(sort: Desc)])
+}
+
+model EmployerSubscription {
+  id         String          @id @default(cuid())
+  employerId String          @unique
+  employer   EmployerProfile @relation(fields: [employerId], references: [id])
+  razorpayId String?
+  amountPaise Int
+  tier       String          @default("starter")
+  startsAt   DateTime
+  expiresAt  DateTime
+  createdAt  DateTime        @default(now())
+}
+
+model PremiumSubscription {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  clerkId     String   @unique
+  razorpayId  String?
+  amountPaise Int      @default(49900)
+  startsAt    DateTime
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+model ApiKey {
+  id         String        @id @default(cuid())
+  name       String
+  keyHash    String        @unique
+  keyPrefix  String
+  userId     String?
+  email      String
+  tier       String        @default("free")
+  callsLimit Int           @default(1000)
+  createdAt  DateTime      @default(now())
+  revokedAt  DateTime?
+  usage      ApiKeyUsage[]
+}
+
+model ApiKeyUsage {
+  id        String   @id @default(cuid())
+  keyId     String
+  key       ApiKey   @relation(fields: [keyId], references: [id])
+  endpoint  String
+  createdAt DateTime @default(now())
+
+  @@index([keyId, createdAt])
+}
