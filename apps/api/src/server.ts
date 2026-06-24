@@ -39,6 +39,9 @@ import {
   handleReferralClick,
   handleReferralSignup,
   handleReferralConvert,
+  handleGetSuccessStories,
+  handleSubmitSuccessStory,
+  handleIndiaIncomeReport,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -317,6 +320,22 @@ app.post("/api/referral/signup", async (c) => {
 
 app.post("/api/referral/convert", async (c) => {
   const { status, body } = await handleReferralConvert(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.get("/api/community/wins", async (c) => {
+  const { status, body } = await handleGetSuccessStories();
+  return c.json(body, status);
+});
+
+app.post("/api/community/wins", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleSubmitSuccessStory(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/community/income-report", async (c) => {
+  const { status, body } = await handleIndiaIncomeReport();
   return c.json(body, status);
 });
 

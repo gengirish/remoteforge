@@ -39,5 +39,8 @@ export {
   handleReferralSignup,
   handleReferralConvert,
   maybeAwardReferralOnFirstApp,
+  handleGetSuccessStories,
+  handleSubmitSuccessStory,
+  handleIndiaIncomeReport,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

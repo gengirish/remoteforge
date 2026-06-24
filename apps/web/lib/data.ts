@@ -206,3 +206,31 @@ export async function fetchReferralCode(clerkId: string): Promise<ReferralData |
   const json = (await res.json()) as { success: boolean; data: ReferralData };
   return json.success ? json.data : null;
 }
+
+export type SuccessStoryItem = {
+  id: string;
+  displayName: string;
+  role: string;
+  company: string;
+  salaryUsd: number | null;
+  city: string | null;
+  story: string;
+  appliedCount: number | null;
+  submittedAt: string;
+};
+
+export async function fetchSuccessStories(): Promise<SuccessStoryItem[] | null> {
+  return apiFetch<SuccessStoryItem[]>("/api/community/wins", { cache: "no-store" });
+}
+
+export type IncomeReport = {
+  generatedAt: string;
+  dataPoints: { salaryReports: number; gigReports: number; applications: number };
+  topRoles: Array<{ roleSlug: string; role: string; _count: { id: number }; _avg: { salaryUsd: number } }>;
+  topGigPlatforms: Array<{ platformId: string; _count: { id: number }; _avg: { earningsUsdMonth: number } }>;
+  recentStories: Array<{ displayName: string; role: string; company: string; salaryUsd: number | null; city: string | null }>;
+};
+
+export async function fetchIncomeReport(): Promise<IncomeReport | null> {
+  return apiFetch<IncomeReport>("/api/community/income-report");
+}

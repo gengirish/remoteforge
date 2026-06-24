@@ -3,7 +3,7 @@ import { Briefcase, Globe, Sparkles } from "lucide-react";
 import { auth } from "@clerk/nextjs/server";
 import { EmailCapture } from "@/components/email-capture";
 import { Button } from "@/components/ui/button";
-import { fetchHomeData, fetchRecommendedJobs } from "@/lib/data";
+import { fetchHomeData, fetchRecommendedJobs, fetchIncomeReport } from "@/lib/data";
 import { LandingTabs } from "./landing-tabs";
 import { ReferralCapture } from "@/components/referral-capture";
 
@@ -18,10 +18,12 @@ export default async function HomePage() {
     // Clerk not configured — skip personalization
   }
 
-  const [homeData, recommended] = await Promise.all([
+  const [homeData, recommended, report] = await Promise.all([
     fetchHomeData(),
     fetchRecommendedJobs(userId),
+    fetchIncomeReport(),
   ]);
+
 
   const stats = {
     jobCount: homeData?.jobCount ?? 0,
@@ -70,6 +72,26 @@ export default async function HomePage() {
                 {stats.indiaGigCount} India-eligible
               </span>
             </div>
+
+            {report && (report.dataPoints.salaryReports > 0 || report.dataPoints.applications > 0 || report.dataPoints.gigReports > 0) && (
+              <div className="animate-fade-up mt-4 flex flex-wrap items-center justify-center gap-3 [animation-delay:400ms]">
+                {report.dataPoints.salaryReports > 0 && (
+                  <Link href="/salary" className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:text-foreground">
+                    {report.dataPoints.salaryReports} salary reports
+                  </Link>
+                )}
+                {report.dataPoints.applications > 0 && (
+                  <Link href="/dashboard/applications" className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:text-foreground">
+                    {report.dataPoints.applications} applications tracked
+                  </Link>
+                )}
+                {report.dataPoints.gigReports > 0 && (
+                  <Link href="/community/income-report" className="rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground hover:text-foreground">
+                    {report.dataPoints.gigReports} gig income reports
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
