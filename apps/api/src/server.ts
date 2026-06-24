@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import {
   handleAffiliateSettingsGet,
   handleAffiliateSettingsUpdate,
+  handleCreateApiKey,
   handleDigest,
   handleFeaturedCreateOrder,
   handleGigAffiliateUpdate,
@@ -18,6 +19,10 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleV2Companies,
+  handleV2Salary,
+  handleV2Skills,
+  handleV2Usage,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -182,6 +187,35 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
   return c.json(res, status);
+});
+
+// ── B2B Data API v2 ──────────────────────────────────────────────────────────
+app.post("/api/v2/keys", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleCreateApiKey(body);
+  return c.json(res, status);
+});
+
+app.get("/api/v2/salary", async (c) => {
+  const roleSlug = c.req.query("role") ?? undefined;
+  const { status, body } = await handleV2Salary(c.req.header("Authorization"), roleSlug);
+  return c.json(body, status);
+});
+
+app.get("/api/v2/companies", async (c) => {
+  const company = c.req.query("company") ?? undefined;
+  const { status, body } = await handleV2Companies(c.req.header("Authorization"), company);
+  return c.json(body, status);
+});
+
+app.get("/api/v2/skills", async (c) => {
+  const { status, body } = await handleV2Skills(c.req.header("Authorization"));
+  return c.json(body, status);
+});
+
+app.get("/api/v2/usage", async (c) => {
+  const { status, body } = await handleV2Usage(c.req.header("Authorization"));
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {

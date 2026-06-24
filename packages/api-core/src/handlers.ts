@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { JOB_BOARD_AFFILIATES } from "@intelliforge/affiliate-links";
 import { prisma } from "@intelliforge/db";
 import { runIngestion } from "@intelliforge/ingestion";
@@ -481,4 +481,213 @@ export async function handleGigAffiliateUpdate(
   });
 
   return { status: 200 as const, body: ok(updated) };
+}
+
+// ── B2B Data API ──────────────────────────────────────────────────────────────
+
+function generateApiKey(): { key: string; keyHash: string; keyPrefix: string } {
+  const key = `rf_${randomBytes(24).toString("hex")}`;
+  const keyHash = createHash("sha256").update(key).digest("hex");
+  const keyPrefix = key.slice(0, 10);
+  return { key, keyHash, keyPrefix };
+}
+
+export async function verifyApiKey(
+  authHeader: string | undefined,
+): Promise<{ keyId: string; tier: string; callsLimit: number } | null> {
+  if (!authHeader?.startsWith("Bearer rf_")) return null;
+  const key = authHeader.slice(7);
+  const keyHash = createHash("sha256").update(key).digest("hex");
+  const record = await (prisma as any).apiKey.findUnique({
+    where: { keyHash },
+    select: { id: true, tier: true, callsLimit: true, revokedAt: true },
+  });
+  if (!record || record.revokedAt) return null;
+  return { keyId: record.id, tier: record.tier, callsLimit: record.callsLimit };
+}
+
+async function trackApiUsage(keyId: string, endpoint: string): Promise<void> {
+  await (prisma as any).apiKeyUsage.create({ data: { keyId, endpoint } }).catch(() => {});
+}
+
+async function checkRateLimit(keyId: string, limit: number): Promise<boolean> {
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const count = await (prisma as any).apiKeyUsage.count({
+    where: { keyId, createdAt: { gte: monthStart } },
+  });
+  return count < limit;
+}
+
+export async function handleCreateApiKey(body: unknown) {
+  const schema = z.object({
+    email: z.string().email(),
+    name: z.string().min(1).max(100),
+  });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const { key, keyHash, keyPrefix } = generateApiKey();
+  await (prisma as any).apiKey.create({
+    data: {
+      email: parsed.data.email,
+      name: parsed.data.name,
+      keyHash,
+      keyPrefix,
+      tier: "free",
+      callsLimit: 1000,
+    },
+  });
+
+  return {
+    status: 200 as const,
+    body: ok({ key, keyPrefix, message: "Store this key securely — it will not be shown again." }),
+  };
+}
+
+export async function handleV2Salary(authHeader: string | undefined, roleSlug: string | undefined) {
+  const verified = await verifyApiKey(authHeader);
+  if (!verified)
+    return {
+      status: 401 as const,
+      body: fail("Invalid or missing API key. Get one at remoteforge.in/data-api"),
+    };
+
+  if (!(await checkRateLimit(verified.keyId, verified.callsLimit)))
+    return {
+      status: 429 as const,
+      body: fail("Monthly call limit reached. Upgrade at remoteforge.in/data-api"),
+    };
+
+  await trackApiUsage(verified.keyId, "/api/v2/salary");
+
+  if (roleSlug) {
+    const reports = await (prisma as any).salaryReport.findMany({
+      where: { roleSlug },
+      select: { yearsExp: true, salaryUsd: true, city: true, submittedAt: true },
+      orderBy: { submittedAt: "desc" as const },
+      take: 100,
+    });
+    if (reports.length < 3)
+      return { status: 200 as const, body: ok({ roleSlug, dataPoints: reports.length, message: "Insufficient data" }) };
+
+    const salaries: number[] = reports
+      .map((r: { salaryUsd: number }) => r.salaryUsd)
+      .sort((a: number, b: number) => a - b);
+    return {
+      status: 200 as const,
+      body: ok({
+        roleSlug,
+        dataPoints: salaries.length,
+        median: salaries[Math.floor(salaries.length * 0.5)],
+        p25: salaries[Math.floor(salaries.length * 0.25)],
+        p75: salaries[Math.floor(salaries.length * 0.75)],
+        avg: Math.round(salaries.reduce((s: number, v: number) => s + v, 0) / salaries.length),
+      }),
+    };
+  }
+
+  const roles = await (prisma as any).salaryReport.groupBy({
+    by: ["roleSlug", "role"],
+    _count: { id: true },
+    _avg: { salaryUsd: true },
+    orderBy: { _count: { id: "desc" as const } },
+    take: 50,
+  });
+  return { status: 200 as const, body: ok({ roles, total: roles.length }) };
+}
+
+export async function handleV2Companies(
+  authHeader: string | undefined,
+  company: string | undefined,
+) {
+  const verified = await verifyApiKey(authHeader);
+  if (!verified) return { status: 401 as const, body: fail("Invalid or missing API key") };
+
+  if (!(await checkRateLimit(verified.keyId, verified.callsLimit)))
+    return { status: 429 as const, body: fail("Monthly call limit reached") };
+
+  await trackApiUsage(verified.keyId, "/api/v2/companies");
+
+  if (company) {
+    const profile = await prisma.companyProfile.findFirst({
+      where: { OR: [{ slug: company }, { name: { contains: company, mode: "insensitive" } }] },
+    });
+    if (!profile) return { status: 404 as const, body: fail("Company not found") };
+    return { status: 200 as const, body: ok(profile) };
+  }
+
+  const companies = await prisma.companyProfile.findMany({
+    where: { indiaFriendlyCount: { gt: 0 } },
+    orderBy: { indiaAcceptRate: "desc" },
+    take: 100,
+    select: {
+      name: true,
+      slug: true,
+      totalJobsPosted: true,
+      indiaFriendlyCount: true,
+      indiaAcceptRate: true,
+      avgResponseDays: true,
+    },
+  });
+  return { status: 200 as const, body: ok({ companies, total: companies.length }) };
+}
+
+export async function handleV2Skills(authHeader: string | undefined) {
+  const verified = await verifyApiKey(authHeader);
+  if (!verified) return { status: 401 as const, body: fail("Invalid or missing API key") };
+
+  if (!(await checkRateLimit(verified.keyId, verified.callsLimit)))
+    return { status: 429 as const, body: fail("Monthly call limit reached") };
+
+  await trackApiUsage(verified.keyId, "/api/v2/skills");
+
+  const jobs = await prisma.job.findMany({
+    where: { isActive: true, indiaFriendly: true },
+    select: { tags: true },
+    take: 1000,
+  });
+
+  const skillMap = new Map<string, number>();
+  for (const job of jobs) {
+    for (const tag of job.tags) {
+      skillMap.set(tag, (skillMap.get(tag) ?? 0) + 1);
+    }
+  }
+  const skills = [...skillMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 100)
+    .map(([skill, demand]) => ({ skill, demand }));
+
+  return { status: 200 as const, body: ok({ skills, total: skills.length, basedOn: jobs.length }) };
+}
+
+export async function handleV2Usage(authHeader: string | undefined) {
+  const verified = await verifyApiKey(authHeader);
+  if (!verified) return { status: 401 as const, body: fail("Invalid or missing API key") };
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const used = await (prisma as any).apiKeyUsage.count({
+    where: { keyId: verified.keyId, createdAt: { gte: monthStart } },
+  });
+  const key = await (prisma as any).apiKey.findUnique({
+    where: { id: verified.keyId },
+    select: { keyPrefix: true, tier: true, callsLimit: true, name: true },
+  });
+
+  return {
+    status: 200 as const,
+    body: ok({
+      name: key?.name,
+      tier: key?.tier,
+      keyPrefix: key?.keyPrefix,
+      callsUsed: used,
+      callsLimit: verified.callsLimit,
+      callsRemaining: Math.max(0, verified.callsLimit - used),
+      resetDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
+    }),
+  };
 }
