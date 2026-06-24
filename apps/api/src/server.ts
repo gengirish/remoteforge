@@ -110,6 +110,17 @@ app.get("/api/gigs/slugs", async (c) => {
   return c.json(body, status);
 });
 
+app.post("/api/gigs/earnings", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleSubmitGigEarnings(body);
+  return c.json(res, status);
+});
+
+app.get("/api/gigs/:slug/earnings", async (c) => {
+  const { status, body } = await handleGigEarningsBySlug(c.req.param("slug"));
+  return c.json(body, status);
+});
+
 app.post("/api/subscribe", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { status, body: res } = await handleSubscribe(body);

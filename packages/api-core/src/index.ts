@@ -31,5 +31,8 @@ export {
   handleSalaryByRole,
   handleSalaryRoles,
   handleGetCompanyBySlug,
+  handleSubmitGigEarnings,
+  handleGigEarningsByPlatform,
+  handleGigEarningsBySlug,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";
