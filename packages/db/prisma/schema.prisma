@@ -154,11 +154,16 @@ model UserProfile {
   targetSalaryMax Int?
   yearsExperience Int?
   resumeUrl       String?
-  wantsRemote     Boolean             @default(true)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  wantsRemote     Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   savedJobs       SavedJob[]
   applications    ApplicationRecord[]
+  // Phase 4 relations
+  referralCode    ReferralCode?
+  referrals       Referral[]     @relation("ReferrerReferrals")
+  referredAs      Referral[]     @relation("RefereeReferral")
+  wallet          ReferralWallet?
 }
 
 model SavedJob {
@@ -236,4 +241,57 @@ model GigEarningsReport {
   submittedAt      DateTime    @default(now())
 
   @@index([platformId])
+}
+
+// Phase 4 models
+model ReferralCode {
+  id          String      @id @default(cuid())
+  userId      String      @unique
+  user        UserProfile @relation(fields: [userId], references: [id])
+  code        String      @unique
+  clickCount  Int         @default(0)
+  signupCount Int         @default(0)
+  createdAt   DateTime    @default(now())
+}
+
+model Referral {
+  id            String       @id @default(cuid())
+  referrerId    String
+  referrer      UserProfile  @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  code          String
+  refereeUserId String?
+  referee       UserProfile? @relation("RefereeReferral", fields: [refereeUserId], references: [id])
+  status        String       @default("clicked")
+  rewardPaise   Int          @default(50000)
+  createdAt     DateTime     @default(now())
+  convertedAt   DateTime?
+
+  @@index([referrerId])
+  @@index([code])
+}
+
+model ReferralWallet {
+  id               String      @id @default(cuid())
+  userId           String      @unique
+  user             UserProfile @relation(fields: [userId], references: [id])
+  balancePaise     Int         @default(0)
+  totalEarnedPaise Int         @default(0)
+  updatedAt        DateTime    @updatedAt
+}
+
+model SuccessStory {
+  id           String   @id @default(cuid())
+  userId       String?
+  displayName  String
+  role         String
+  company      String
+  salaryUsd    Int?
+  city         String?
+  story        String
+  appliedCount Int?
+  isPublic     Boolean  @default(true)
+  isApproved   Boolean  @default(false)
+  submittedAt  DateTime @default(now())
+
+  @@index([isPublic, isApproved])
 }

@@ -5,6 +5,7 @@ import { EmailCapture } from "@/components/email-capture";
 import { Button } from "@/components/ui/button";
 import { fetchHomeData, fetchRecommendedJobs } from "@/lib/data";
 import { LandingTabs } from "./landing-tabs";
+import { ReferralCapture } from "@/components/referral-capture";
 
 export const revalidate = 3600;
 
@@ -30,6 +31,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <ReferralCapture apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""} />
       <section className="hero-gradient border-b border-border">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">

@@ -34,5 +34,10 @@ export {
   handleSubmitGigEarnings,
   handleGigEarningsByPlatform,
   handleGigEarningsBySlug,
+  handleGetReferralCode,
+  handleReferralClick,
+  handleReferralSignup,
+  handleReferralConvert,
+  maybeAwardReferralOnFirstApp,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

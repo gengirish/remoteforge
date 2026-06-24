@@ -15,4 +15,8 @@ export type {
   CompanyProfile,
   SalaryReport,
   GigEarningsReport,
+  ReferralCode,
+  Referral,
+  ReferralWallet,
+  SuccessStory,
 } from "@prisma/client";
