@@ -16,5 +16,8 @@ export {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleGetSuccessStories,
+  handleSubmitSuccessStory,
+  handleIndiaIncomeReport,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

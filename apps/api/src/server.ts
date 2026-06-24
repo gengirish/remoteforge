@@ -18,6 +18,9 @@ import {
   handleJobsGet,
   handleRazorpayWebhook,
   handleSubscribe,
+  handleGetSuccessStories,
+  handleSubmitSuccessStory,
+  handleIndiaIncomeReport,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -182,6 +185,22 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
   return c.json(res, status);
+});
+
+app.get("/api/community/wins", async (c) => {
+  const { status, body } = await handleGetSuccessStories();
+  return c.json(body, status);
+});
+
+app.post("/api/community/wins", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleSubmitSuccessStory(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/community/income-report", async (c) => {
+  const { status, body } = await handleIndiaIncomeReport();
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {

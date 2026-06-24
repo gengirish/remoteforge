@@ -449,6 +449,96 @@ const gigAffiliateUpdateSchema = z.object({
   referralReward: z.string().nullable().optional(),
 });
 
+// GET /api/community/wins — approved public success stories (isApproved gate prevents spam)
+export async function handleGetSuccessStories() {
+  const stories = await (prisma as any).successStory.findMany({
+    where: { isPublic: true, isApproved: true },
+    orderBy: { submittedAt: "desc" as const },
+    take: 50,
+    select: {
+      id: true, displayName: true, role: true, company: true,
+      salaryUsd: true, city: true, story: true, appliedCount: true, submittedAt: true,
+    },
+  });
+  return { status: 200 as const, body: ok({ stories }) };
+}
+
+// POST /api/community/wins — anonymous or authenticated submission; requires manual approval before appearing
+export async function handleSubmitSuccessStory(body: unknown, clerkId?: string | undefined) {
+  const schema = z.object({
+    displayName: z.string().min(2).max(80),
+    role: z.string().min(2).max(100),
+    company: z.string().min(1).max(100),
+    salaryUsd: z.number().int().min(0).optional(),
+    city: z.string().max(100).optional(),
+    story: z.string().min(50).max(2000),
+    appliedCount: z.number().int().min(1).optional(),
+  });
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  let userId: string | null = null;
+  if (clerkId) {
+    const profile = await prisma.userProfile.findUnique({ where: { clerkId }, select: { id: true } });
+    userId = profile?.id ?? null;
+  }
+
+  const story = await (prisma as any).successStory.create({
+    data: { ...parsed.data, userId, isApproved: false },
+  });
+
+  return { status: 200 as const, body: ok({ id: story.id, message: "Story submitted for review. It will appear once approved." }) };
+}
+
+// GET /api/community/income-report — aggregated live stats from all community data tables
+export async function handleIndiaIncomeReport() {
+  const now = new Date();
+
+  const [
+    totalSalaryReports,
+    totalGigReports,
+    totalApplications,
+    topRoles,
+    topGigPlatforms,
+    recentStories,
+  ] = await Promise.all([
+    (prisma as any).salaryReport.count(),
+    (prisma as any).gigEarningsReport.count(),
+    (prisma as any).applicationRecord.count(),
+    (prisma as any).salaryReport.groupBy({
+      by: ["roleSlug", "role"],
+      _count: { id: true },
+      _avg: { salaryUsd: true },
+      orderBy: { _count: { id: "desc" as const } },
+      take: 5,
+    }),
+    (prisma as any).gigEarningsReport.groupBy({
+      by: ["platformId"],
+      _count: { id: true },
+      _avg: { earningsUsdMonth: true },
+      orderBy: { _count: { id: "desc" as const } },
+      take: 5,
+    }),
+    (prisma as any).successStory.findMany({
+      where: { isPublic: true, isApproved: true },
+      orderBy: { submittedAt: "desc" as const },
+      take: 3,
+      select: { displayName: true, role: true, company: true, salaryUsd: true, city: true },
+    }),
+  ]);
+
+  return {
+    status: 200 as const,
+    body: ok({
+      generatedAt: now.toISOString(),
+      dataPoints: { salaryReports: totalSalaryReports, gigReports: totalGigReports, applications: totalApplications },
+      topRoles,
+      topGigPlatforms,
+      recentStories,
+    }),
+  };
+}
+
 export async function handleGigAffiliateUpdate(
   id: string,
   body: unknown,
