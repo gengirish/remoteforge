@@ -42,6 +42,7 @@ export async function ingestSource(source: IngestSource): Promise<IngestResult> 
           },
         },
         create: normalized,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         update: {
           title: normalized.title,
           description: normalized.description,
@@ -50,11 +51,11 @@ export async function ingestSource(source: IngestSource): Promise<IngestResult> 
           salaryMax: normalized.salaryMax,
           affiliateUrl: normalized.affiliateUrl,
           indiaFriendly: normalized.indiaFriendly,
-          timezoneFriendly: normalized.timezoneFriendly,
-          visaSponsorship: normalized.visaSponsorship,
           postedAt: normalized.postedAt,
           isActive: true,
-        },
+          ...(normalized.timezoneFriendly !== undefined ? { timezoneFriendly: normalized.timezoneFriendly } : {}),
+          ...(normalized.visaSponsorship !== undefined ? { visaSponsorship: normalized.visaSponsorship } : {}),
+        } as any,
       });
       upserted++;
     }

@@ -28,7 +28,9 @@ model Job {
   affiliateUrl  String?
   isActive      Boolean   @default(true)
   isFeatured    Boolean   @default(false)
-  indiaFriendly Boolean   @default(true)
+  indiaFriendly     Boolean   @default(true)
+  timezoneFriendly  Boolean?
+  visaSponsorship   Boolean?
   postedAt      DateTime
   expiresAt     DateTime?
   createdAt     DateTime  @default(now())

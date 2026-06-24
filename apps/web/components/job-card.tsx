@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface JobCardProps {
   job: Job;
   className?: string;
+  matchScore?: number;
 }
 
 export function JobCard({ job, className }: JobCardProps) {

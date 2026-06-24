@@ -235,6 +235,19 @@ export async function fetchIncomeReport(): Promise<IncomeReport | null> {
   return apiFetch<IncomeReport>("/api/community/income-report");
 }
 
+export type GigEarningsData = {
+  platform: { name: string; payMin: number; payMax: number; payNote?: string | null };
+  dataPoints: number;
+  median?: number;
+  p90?: number;
+  message?: string;
+  taskBreakdown?: { taskType: string; median: number; count: number }[];
+};
+
+export async function fetchGigEarnings(slug: string): Promise<GigEarningsData | null> {
+  return apiFetch<GigEarningsData>(`/api/gigs/${slug}/earnings`);
+}
+
 export async function fetchEmployerProfile(clerkId: string) {
   return apiFetch<{
     id: string;
