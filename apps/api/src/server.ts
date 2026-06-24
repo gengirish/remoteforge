@@ -1,12 +1,14 @@
-﻿import { serve } from "@hono/node-server";
+import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
   handleAffiliateSettingsGet,
   handleAffiliateSettingsUpdate,
+  handleCompanyStats,
   handleDigest,
   handleFeaturedCreateOrder,
   handleGigAffiliateUpdate,
+  handleGetApplications,
   handleGigsGet,
   handleGoRedirect,
   handleGigSlugs,
@@ -24,6 +26,7 @@ import {
   handleUpsertProfile,
   handleToggleSavedJob,
   handleGetSavedJobs,
+  handleUpsertApplication,
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -203,7 +206,6 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
   return c.json(res, status);
 });
 
-
 app.get("/api/user/profile", async (c) => {
   const { status, body } = await handleGetProfile(c.req.header("X-Clerk-User-Id"));
   return c.json(body, status);
@@ -227,6 +229,22 @@ app.post("/api/user/saved-jobs", async (c) => {
     body?.jobId,
   );
   return c.json(res, status);
+});
+
+app.post("/api/applications", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const { status, body: res } = await handleUpsertApplication(body, c.req.header("X-Clerk-User-Id"));
+  return c.json(res, status);
+});
+
+app.get("/api/applications", async (c) => {
+  const { status, body } = await handleGetApplications(c.req.header("X-Clerk-User-Id"));
+  return c.json(body, status);
+});
+
+app.get("/api/companies/:company/stats", async (c) => {
+  const { status, body } = await handleCompanyStats(c.req.param("company"));
+  return c.json(body, status);
 });
 
 serve({ fetch: app.fetch, port: PORT, hostname: "0.0.0.0" }, (info) => {

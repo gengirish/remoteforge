@@ -2,10 +2,12 @@ export { ok, fail, type ApiResponse } from "./response";
 export { computeMatchScore } from "./match-score";
 export {
   handleCompaniesIndia,
+  handleCompanyStats,
   handleDigest,
   handleAffiliateSettingsGet,
   handleAffiliateSettingsUpdate,
   handleFeaturedCreateOrder,
+  handleGetApplications,
   handleGigAffiliateUpdate,
   handleGigSlugs,
   handleGigsGet,
@@ -24,5 +26,6 @@ export {
   handleGetProfile,
   handleToggleSavedJob,
   handleGetSavedJobs,
+  handleUpsertApplication,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

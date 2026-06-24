@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2 } from "lucide-react";
+import { ApplyTrackButton } from "@/components/apply-track-button";
 import { EmployerUpsellBanner } from "@/components/employer-upsell-banner";
 import { FeaturedCheckout } from "@/components/featured-checkout";
 import { IndiaBadge } from "@/components/india-badge";
 import { ScoreResumeCTA } from "@/components/job-card-cta";
 import { SalaryBadge } from "@/components/salary-badge";
-import { Button } from "@/components/ui/button";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
 import { apiGoUrl } from "@/lib/api-url";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
@@ -74,7 +74,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                   {job.tags.map((tag: string) => (
                     <Link
                       key={tag}
-                      href={`/jobs/tag/${tag}`}
+                      href={"/jobs/tag/" + tag}
                       className="rounded-full bg-secondary px-3 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                     >
                       {tag}
@@ -92,9 +92,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           </div>
 
           <div className="mt-8 flex flex-col gap-4 border-t border-border pt-8">
-            <Button asChild size="lg" className="w-fit">
-              <a href={applyUrl}>Apply to this job</a>
-            </Button>
+            <ApplyTrackButton
+              jobId={job.id}
+              applyUrl={applyUrl}
+              apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
+            />
             <ScoreResumeCTA job={job} />
           </div>
         </div>

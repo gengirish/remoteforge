@@ -647,3 +647,103 @@ export async function handleRecommendedJobs(clerkId: string | undefined) {
 
   return { status: 200 as const, body: ok({ jobs: scored, personalized: true }) };
 }
+
+const applicationStatusSchema = z.enum(["applied", "interviewing", "offered", "rejected", "ghosted"]);
+
+// schema: ApplicationRecord and ApplicationEvent added by Phase 2 Agent A (db:push required)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = prisma as any;
+
+export async function handleUpsertApplication(body: unknown, clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+
+  const schema = z.object({
+    jobId: z.string().min(1),
+    status: applicationStatusSchema,
+    note: z.string().optional(),
+  });
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
+
+  const profile = await db.userProfile.findUnique({ where: { clerkId } });
+  if (!profile) return { status: 404 as const, body: fail("Profile not found — complete your profile first") };
+
+  const job = await prisma.job.findUnique({ where: { id: parsed.data.jobId }, select: { id: true, company: true } });
+  if (!job) return { status: 404 as const, body: fail("Job not found") };
+
+  const application = await db.applicationRecord.upsert({
+    where: { userId_jobId: { userId: profile.id, jobId: job.id } },
+    create: { userId: profile.id, jobId: job.id, company: job.company, status: parsed.data.status },
+    update: { status: parsed.data.status, updatedAt: new Date() },
+  });
+
+  const daysFromApply = Math.floor((Date.now() - new Date(application.appliedAt).getTime()) / (1000 * 60 * 60 * 24));
+
+  await db.applicationEvent.create({
+    data: {
+      applicationId: application.id,
+      status: parsed.data.status,
+      note: parsed.data.note,
+      daysFromApply,
+    },
+  });
+
+  return { status: 200 as const, body: ok(application) };
+}
+
+export async function handleGetApplications(clerkId: string | undefined) {
+  if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
+
+  const profile = await db.userProfile.findUnique({ where: { clerkId } });
+  if (!profile) return { status: 200 as const, body: ok({ applications: [] }) };
+
+  const applications = await db.applicationRecord.findMany({
+    where: { userId: profile.id },
+    include: {
+      job: { select: { title: true, company: true, slug: true, salaryMin: true, salaryMax: true } },
+      events: { orderBy: { createdAt: "desc" }, take: 5 },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return { status: 200 as const, body: ok({ applications }) };
+}
+
+export async function handleCompanyStats(company: string) {
+  const [total, byStatus] = await Promise.all([
+    db.applicationRecord.count({ where: { company } }),
+    db.applicationRecord.groupBy({
+      by: ["status"],
+      where: { company },
+      _count: { id: true },
+    }),
+  ]);
+
+  if (total < 3) {
+    return { status: 200 as const, body: ok({ company, dataPoints: total, message: "Insufficient data" }) };
+  }
+
+  const responseEvents = await db.applicationEvent.findMany({
+    where: {
+      application: { company },
+      status: { in: ["interviewing", "offered", "rejected"] },
+      daysFromApply: { not: null },
+    },
+    select: { daysFromApply: true },
+  });
+
+  const avgResponseDays =
+    responseEvents.length > 0
+      ? Math.round(
+          responseEvents.reduce((s: number, e: { daysFromApply: number }) => s + (e.daysFromApply ?? 0), 0) /
+            responseEvents.length,
+        )
+      : null;
+
+  const statusBreakdown = Object.fromEntries(
+    (byStatus as Array<{ status: string; _count: { id: number } }>).map((g) => [g.status, g._count.id]),
+  );
+
+  return { status: 200 as const, body: ok({ company, dataPoints: total, avgResponseDays, statusBreakdown }) };
+}
