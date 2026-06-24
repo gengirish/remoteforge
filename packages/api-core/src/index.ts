@@ -30,5 +30,7 @@ export {
   handleSubmitSalary,
   handleSalaryByRole,
   handleSalaryRoles,
+  handleCompaniesIndia,
+  handleGetCompanyBySlug,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";

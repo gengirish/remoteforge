@@ -12,4 +12,7 @@ export type {
   SavedJob,
   ApplicationRecord,
   ApplicationEvent,
+  CompanyProfile,
+  SalaryReport,
+  GigEarningsReport,
 } from "@prisma/client";

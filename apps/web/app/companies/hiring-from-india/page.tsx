@@ -19,14 +19,14 @@ export default async function CompaniesHiringFromIndiaPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Companies Hiring Remotely from India</h1>
         <p className="mt-2 text-muted-foreground">
-          Ranked by India-eligible job count. Data is derived from live job
-          listings across Remotive, We Work Remotely, and RemoteOK.
+          Ranked by India-eligible job count. Data derived from live listings across
+          Remotive, We Work Remotely, and RemoteOK.
         </p>
       </div>
 
       {companies.length === 0 ? (
         <p className="text-muted-foreground">
-          No company data yet — run the job ingestion to populate this page.
+          No company data yet — run job ingestion to populate this page.
         </p>
       ) : (
         <div className="overflow-x-auto">
@@ -35,9 +35,10 @@ export default async function CompaniesHiringFromIndiaPage() {
               <tr className="border-b text-left text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">#</th>
                 <th className="pb-3 pr-4 font-medium">Company</th>
-                <th className="pb-3 pr-4 font-medium text-right">Total Remote Jobs</th>
-                <th className="pb-3 pr-4 font-medium text-right">India-Eligible</th>
-                <th className="pb-3 font-medium text-right">India Accept Rate</th>
+                <th className="pb-3 pr-4 text-right font-medium">Total Remote Jobs</th>
+                <th className="pb-3 pr-4 text-right font-medium">India-Eligible</th>
+                <th className="pb-3 pr-4 text-right font-medium">Avg Response</th>
+                <th className="pb-3 text-right font-medium">India Accept Rate</th>
               </tr>
             </thead>
             <tbody>
@@ -56,7 +57,7 @@ export default async function CompaniesHiringFromIndiaPage() {
                     <td className="py-3 pr-4 text-muted-foreground">{i + 1}</td>
                     <td className="py-3 pr-4">
                       <Link
-                        href={`/jobs?search=${encodeURIComponent(company.name)}&indiaOnly=true`}
+                        href={`/companies/${company.slug}`}
                         className="font-medium hover:text-primary hover:underline"
                       >
                         {company.name}
@@ -67,6 +68,11 @@ export default async function CompaniesHiringFromIndiaPage() {
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">
                       {company.indiaFriendlyCount}
+                    </td>
+                    <td className="py-3 pr-4 text-right tabular-nums text-muted-foreground">
+                      {company.avgResponseDays != null
+                        ? `${Math.round(company.avgResponseDays)}d`
+                        : "—"}
                     </td>
                     <td className={`py-3 text-right font-semibold tabular-nums ${rateColor}`}>
                       {rateLabel}
@@ -80,8 +86,8 @@ export default async function CompaniesHiringFromIndiaPage() {
       )}
 
       <p className="mt-6 text-xs text-muted-foreground">
-        India eligibility is determined by the absence of location restrictions in each job listing.
-        Accept rate = India-eligible jobs / total remote jobs posted by that company.
+        India Accept Rate = India-eligible jobs ÷ total remote jobs per company.
+        Avg Response = community-reported days from application to first response.
       </p>
     </div>
   );

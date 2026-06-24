@@ -5,6 +5,8 @@ import {
   handleAffiliateSettingsGet,
   handleAffiliateSettingsUpdate,
   handleCompanyStats,
+  handleCompaniesIndia,
+  handleGetCompanyBySlug,
   handleDigest,
   handleFeaturedCreateOrder,
   handleGigAffiliateUpdate,
@@ -170,6 +172,17 @@ app.get("/go/:id", async (c) => {
     return c.redirect(result.redirect, 302);
   }
   return c.json(result.body, result.status);
+});
+
+// Static route /api/companies/india must be declared BEFORE the :slug wildcard
+app.get("/api/companies/india", async (c) => {
+  const { status, body } = await handleCompaniesIndia();
+  return c.json(body, status);
+});
+
+app.get("/api/companies/:slug", async (c) => {
+  const { status, body } = await handleGetCompanyBySlug(c.req.param("slug"));
+  return c.json(body, status);
 });
 
 app.get("/api/internal/stats", async (c) => {

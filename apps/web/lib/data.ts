@@ -173,3 +173,17 @@ export async function fetchSalaryRoles(): Promise<SalaryRole[] | null> {
   const data = await apiFetch<{ roles: SalaryRole[] }>("/api/salary/roles");
   return data?.roles ?? null;
 }
+
+export interface CompanyProfileData {
+  id: string;
+  name: string;
+  slug: string;
+  totalJobsPosted: number;
+  indiaFriendlyCount: number;
+  indiaAcceptRate: number | null;
+  avgResponseDays: number | null;
+}
+
+export async function fetchCompanyBySlug(slug: string) {
+  return apiFetch<CompanyProfileData>(`/api/companies/${slug}`);
+}

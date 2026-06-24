@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { href: "/jobs", label: "Remote Jobs" },
   { href: "/ai-gigs", label: "AI Gig Work" },
+  { href: "/companies/hiring-from-india", label: "Companies" },
 ] as const;
 
 interface SiteHeaderInnerProps {
