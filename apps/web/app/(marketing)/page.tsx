@@ -1,18 +1,31 @@
 import Link from "next/link";
 import { Briefcase, Globe, Sparkles } from "lucide-react";
+import { auth } from "@clerk/nextjs/server";
 import { EmailCapture } from "@/components/email-capture";
 import { Button } from "@/components/ui/button";
+import { fetchHomeData, fetchRecommendedJobs } from "@/lib/data";
 import { LandingTabs } from "./landing-tabs";
-import { fetchHomeData } from "@/lib/data";
 
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const data = await fetchHomeData();
+  let userId: string | undefined;
+  try {
+    const session = await auth();
+    userId = session.userId ?? undefined;
+  } catch {
+    // Clerk not configured — skip personalization
+  }
+
+  const [homeData, recommended] = await Promise.all([
+    fetchHomeData(),
+    fetchRecommendedJobs(userId),
+  ]);
+
   const stats = {
-    jobCount: data?.jobCount ?? 0,
-    gigCount: data?.gigCount ?? 0,
-    indiaGigCount: data?.indiaGigCount ?? 0,
+    jobCount: homeData?.jobCount ?? 0,
+    gigCount: homeData?.gigCount ?? 0,
+    indiaGigCount: homeData?.indiaGigCount ?? 0,
   };
 
   return (
@@ -60,7 +73,11 @@ export default async function HomePage() {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 py-12">
-        <LandingTabs jobs={data?.jobs ?? []} gigs={data?.gigs ?? []} />
+        <LandingTabs
+          jobs={homeData?.jobs ?? []}
+          gigs={homeData?.gigs ?? []}
+          recommendedJobs={recommended?.personalized ? recommended.jobs : undefined}
+        />
         <section className="mt-20">
           <EmailCapture />
         </section>

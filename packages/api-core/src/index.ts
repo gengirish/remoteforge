@@ -1,4 +1,5 @@
 export { ok, fail, type ApiResponse } from "./response";
+export { computeMatchScore } from "./match-score";
 export {
   handleCompaniesIndia,
   handleDigest,
@@ -17,6 +18,7 @@ export {
   handleJobSlugs,
   handleJobsGet,
   handleRazorpayWebhook,
+  handleRecommendedJobs,
   handleSubscribe,
   handleUpsertProfile,
   handleGetProfile,

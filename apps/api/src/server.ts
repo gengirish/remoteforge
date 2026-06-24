@@ -18,6 +18,7 @@ import {
   handleJobSlugs,
   handleJobsGet,
   handleRazorpayWebhook,
+  handleRecommendedJobs,
   handleSubscribe,
   handleGetProfile,
   handleUpsertProfile,
@@ -66,6 +67,11 @@ app.get("/api/jobs", async (c) => {
     c.req.header("X-Internal-Key"),
     process.env.REMOTEFORGE_INTERNAL_KEY,
   );
+  return c.json(body, status);
+});
+
+app.get("/api/jobs/recommended", async (c) => {
+  const { status, body } = await handleRecommendedJobs(c.req.header("X-Clerk-User-Id"));
   return c.json(body, status);
 });
 

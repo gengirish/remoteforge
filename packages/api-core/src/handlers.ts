@@ -8,6 +8,7 @@ import { loadAffiliateSettings } from "@intelliforge/db";
 import { getAffiliateSettingsForAdmin } from "./affiliate-config";
 import { getRedirectTarget } from "./affiliate";
 import { authorizeCron } from "./cron-auth";
+import { computeMatchScore } from "./match-score";
 import { fail, ok } from "./response";
 
 function hashIp(ip: string): string {
@@ -595,4 +596,54 @@ export async function handleGetSavedJobs(clerkId: string | undefined) {
   });
   if (!profile) return { status: 404 as const, body: fail("Profile not found") };
   return { status: 200 as const, body: ok({ jobs: profile.savedJobs.map((s: any) => s.job) }) };
+}
+
+export async function handleRecommendedJobs(clerkId: string | undefined) {
+  const fallback = async () => {
+    const jobs = await prisma.job.findMany({
+      where: { isActive: true, indiaFriendly: true },
+      orderBy: [{ isFeatured: "desc" }, { postedAt: "desc" }],
+      take: 12,
+    });
+    return {
+      status: 200 as const,
+      body: ok({ jobs: jobs.map((j: any) => ({ ...j, matchScore: null })), personalized: false }),
+    };
+  };
+
+  if (!clerkId) return fallback();
+
+  const profile = await (prisma as any).userProfile?.findUnique({ where: { clerkId } });
+  if (!profile || !profile.skills || (profile.skills as string[]).length === 0) return fallback();
+
+  const candidates = await prisma.job.findMany({
+    where: { isActive: true },
+    orderBy: { postedAt: "desc" },
+    take: 200,
+  });
+
+  const userSignals = {
+    skills: profile.skills as string[],
+    targetSalaryMin: profile.targetSalaryMin as number | null,
+    targetSalaryMax: profile.targetSalaryMax as number | null,
+  };
+
+  const scored = (candidates as any[])
+    .map((job: Record<string, unknown>) => ({
+      ...job,
+      matchScore: computeMatchScore(
+        {
+          tags: job["tags"] as string[],
+          salaryMin: job["salaryMin"] as number | null,
+          salaryMax: job["salaryMax"] as number | null,
+          indiaFriendly: job["indiaFriendly"] as boolean,
+          timezoneFriendly: job["timezoneFriendly"] as boolean | undefined,
+        },
+        userSignals,
+      ),
+    }))
+    .sort((a: { matchScore: number }, b: { matchScore: number }) => b.matchScore - a.matchScore)
+    .slice(0, 12);
+
+  return { status: 200 as const, body: ok({ jobs: scored, personalized: true }) };
 }
