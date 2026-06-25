@@ -11,15 +11,24 @@ export function SiteFooter() {
               Remote<span className="text-primary">Forge</span>
             </Link>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              India&apos;s curated directory for remote jobs and AI gig platforms.
-              Compare pay, eligibility, and onboarding — then apply with working
-              referral links.
+              Compare AI training and annotation platforms for India — pay,
+              eligibility, onboarding. Plus remote jobs that actually hire from
+              India.
             </p>
           </div>
 
           <div>
             <h3 className="text-sm font-semibold">Browse</h3>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link
+                  href="/ai-gigs"
+                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI Gig Platforms
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/jobs"
@@ -29,13 +38,25 @@ export function SiteFooter() {
                   Remote Jobs
                 </Link>
               </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold">More</h3>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link
-                  href="/ai-gigs"
-                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  AI Gig Platforms
+                <Link href="/employer" className="transition-colors hover:text-primary">
+                  For Employers
+                </Link>
+              </li>
+              <li>
+                <Link href="/data-api" className="transition-colors hover:text-primary">
+                  Data API
+                </Link>
+              </li>
+              <li>
+                <Link href="/premium" className="transition-colors hover:text-primary">
+                  Premium
                 </Link>
               </li>
             </ul>

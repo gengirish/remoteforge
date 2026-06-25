@@ -41,20 +41,20 @@ export default async function HomePage() {
               Built for India&apos;s remote workforce
             </p>
             <h1 className="animate-fade-up mt-4 text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl [animation-delay:80ms]">
-              Find remote jobs &amp; AI gigs that actually hire from{" "}
-              <span className="text-primary">India</span>
+              Compare AI gigs that pay Indians{" "}
+              <span className="text-primary">$20–40/hr</span>
             </h1>
             <p className="animate-fade-up mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground [animation-delay:160ms]">
-              Compare pay ranges, India eligibility, and onboarding timelines —
-              then apply with referral links that work.
+              Pay, India eligibility, and onboarding time — pick the right platform
+              first try. Plus remote jobs filtered for India.
             </p>
 
             <div className="animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-3 [animation-delay:240ms]">
               <Button asChild size="lg">
-                <Link href="/jobs">Browse remote jobs</Link>
+                <Link href="/ai-gigs">Compare AI platforms</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/ai-gigs">Compare AI platforms</Link>
+                <Link href="/jobs">Browse remote jobs</Link>
               </Button>
             </div>
 

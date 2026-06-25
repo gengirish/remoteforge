@@ -19,9 +19,9 @@ const fontBody = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "RemoteForge — India's home for remote jobs and AI gig work",
+  title: "AI Gig Work India 2026 — Compare Pay & Eligibility | RemoteForge",
   description:
-    "Discover remote jobs and AI gig work platforms open to India. Compare pay, onboarding time, and apply with referral links.",
+    "Compare Outlier, Appen, TELUS and more — pay, India eligibility, onboarding time. Plus remote jobs that hire from India.",
 };
 
 const themeInitScript = `(function(){try{var k='remoteforge-theme';var s=localStorage.getItem(k);var d=s==='dark'||(s!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;

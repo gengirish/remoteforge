@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Hire Remote Talent from India | RemoteForge for Employers",
   description:
-    "Post remote jobs to 50,000+ India-based developers, designers and PMs. Get the India-Friendly badge and access talent analytics.",
+    "Post remote jobs to India-based developers, designers and PMs. Get the India-Friendly badge and access talent analytics.",
 };
 
 const FEATURES = [
@@ -70,7 +70,7 @@ export default function EmployerMarketingPage() {
             Hire remote talent from India — the right way
           </h1>
           <p className="mb-8 text-xl text-gray-600">
-            RemoteForge is where 50,000+ India-based remote workers look for jobs. Get the
+            Post where candidates already filter for India-friendly roles. Get the
             India-Friendly badge and show up when it matters.
           </p>
           <div className="flex flex-wrap justify-center gap-4">

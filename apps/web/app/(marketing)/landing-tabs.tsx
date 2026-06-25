@@ -28,7 +28,7 @@ export function LandingTabs({ jobs, gigs, recommendedJobs }: LandingTabsProps) {
   );
 
   const hasRecommended = recommendedJobs && recommendedJobs.length > 0;
-  const defaultTab = hasRecommended ? "recommended" : "jobs";
+  const defaultTab = hasRecommended ? "recommended" : "gigs";
   const tabCols = hasRecommended ? "grid-cols-3" : "grid-cols-2";
 
   return (
@@ -37,8 +37,8 @@ export function LandingTabs({ jobs, gigs, recommendedJobs }: LandingTabsProps) {
         {hasRecommended && (
           <TabsTrigger value="recommended">✦ For You</TabsTrigger>
         )}
-        <TabsTrigger value="jobs">Remote Jobs</TabsTrigger>
         <TabsTrigger value="gigs">AI Gig Work</TabsTrigger>
+        <TabsTrigger value="jobs">Remote Jobs</TabsTrigger>
       </TabsList>
 
       {hasRecommended && (

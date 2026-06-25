@@ -10,10 +10,9 @@ import { ThemeToggle } from "./theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { href: "/jobs", label: "Remote Jobs" },
   { href: "/ai-gigs", label: "AI Gig Work" },
+  { href: "/jobs", label: "Remote Jobs" },
   { href: "/companies/hiring-from-india", label: "Companies" },
-  { href: "/data-api", label: "Data API" },
 ] as const;
 
 interface SiteHeaderInnerProps {

@@ -12,7 +12,7 @@
     "ingest": "tsx --env-file=.env scripts/ingest.ts",
     "deploy:api": "fly deploy . --config apps/api/fly.toml --dockerfile apps/api/Dockerfile --ha=false --primary-region bom --regions bom",
     "deploy:worker": "fly deploy . --config workers/ingestion/fly.toml --dockerfile workers/ingestion/Dockerfile --ha=false --primary-region bom --regions bom",
-    "deploy:web": "cd apps/web && vercel --prod",
+    "deploy:web": "vercel --prod --yes",
     "db:generate": "pnpm --filter @intelliforge/db db:generate",
     "db:push": "pnpm --filter @intelliforge/db db:push",
     "db:seed": "pnpm --filter @intelliforge/db db:seed",

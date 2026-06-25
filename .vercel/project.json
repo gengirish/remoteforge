@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_cVnbIWSVrpubwXpERqH24iG744M1",
+  "orgId": "team_PsUWYasoQF6BYqGVcJUyL8wt",
+  "projectName": "remoteforge-web",
+  "settings": {
+    "createdAt": 1782223576841,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": "cd ../.. && pnpm install",
+    "buildCommand": "cd ../.. && pnpm --filter web build",
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}
