@@ -1,6 +1,6 @@
 import { loadAffiliateSettings, prisma } from "@intelliforge/db";
 import { normalizeJob } from "./processors/normalize-job";
-import { syncCompanyProfiles } from "./processors/company-profile";
+import { runPostIngestEnrichment } from "./enrichment";
 import { fetchRemotiveJobs } from "./sources/remotive";
 import { fetchRemoteOkJobs } from "./sources/remoteok";
 import { fetchWwrJobs } from "./sources/wwr";
@@ -53,8 +53,12 @@ export async function ingestSource(source: IngestSource): Promise<IngestResult> 
           indiaFriendly: normalized.indiaFriendly,
           postedAt: normalized.postedAt,
           isActive: true,
-          ...(normalized.timezoneFriendly !== undefined ? { timezoneFriendly: normalized.timezoneFriendly } : {}),
-          ...(normalized.visaSponsorship !== undefined ? { visaSponsorship: normalized.visaSponsorship } : {}),
+          ...(normalized.timezoneFriendly !== undefined
+            ? { timezoneFriendly: normalized.timezoneFriendly }
+            : {}),
+          ...(normalized.visaSponsorship !== undefined
+            ? { visaSponsorship: normalized.visaSponsorship }
+            : {}),
         } as any,
       });
       upserted++;
@@ -77,12 +81,16 @@ export async function runIngestion(
   for (const source of sources) {
     results.push(await ingestSource(source));
   }
-  await syncCompanyProfiles().catch((err) =>
-    console.error("syncCompanyProfiles failed:", err),
+  await runPostIngestEnrichment().catch((err) =>
+    console.error("runPostIngestEnrichment failed:", err),
   );
   return results;
 }
 
 export { detectIndiaEligibility, detectIndiaFriendly, detectTimezoneFriendly, detectVisaSponsorship } from "./processors/india-check";
 export { syncCompanyProfiles } from "./processors/company-profile";
+export {
+  runPostIngestEnrichment,
+  syncUsdInrRate,
+} from "./enrichment";
 export type { NormalizedJob } from "./sources/remotive";

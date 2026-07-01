@@ -14,9 +14,10 @@ interface LandingTabsProps {
   jobs: Job[];
   gigs: GigPlatform[];
   recommendedJobs?: RecommendedJob[];
+  inrRate?: number;
 }
 
-export function LandingTabs({ jobs, gigs, recommendedJobs }: LandingTabsProps) {
+export function LandingTabs({ jobs, gigs, recommendedJobs, inrRate }: LandingTabsProps) {
   const [jobQuery, setJobQuery] = useState("");
   const onJobSearch = useCallback((q: string) => setJobQuery(q), []);
 
@@ -48,7 +49,12 @@ export function LandingTabs({ jobs, gigs, recommendedJobs }: LandingTabsProps) {
           </p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recommendedJobs.map((job) => (
-              <JobCard key={job.id} job={job} matchScore={job.matchScore ?? undefined} />
+              <JobCard
+                key={job.id}
+                job={job}
+                matchScore={job.matchScore ?? undefined}
+                inrRate={inrRate}
+              />
             ))}
           </div>
           <div className="mt-6 text-center">
@@ -67,7 +73,7 @@ export function LandingTabs({ jobs, gigs, recommendedJobs }: LandingTabsProps) {
         />
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
+            <JobCard key={job.id} job={job} inrRate={inrRate} />
           ))}
         </div>
         {filteredJobs.length === 0 && (
@@ -91,7 +97,7 @@ export function LandingTabs({ jobs, gigs, recommendedJobs }: LandingTabsProps) {
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {gigs.map((platform) => (
-            <GigPlatformCard key={platform.id} platform={platform} />
+            <GigPlatformCard key={platform.id} platform={platform} inrRate={inrRate} />
           ))}
         </div>
         <div className="mt-6 text-center">

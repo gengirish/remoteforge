@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JobCard } from "@/components/job-card";
 import { fetchJobs } from "@/lib/data";
+import { fetchUsdToInrRate } from "@/lib/currency";
 
 export const revalidate = 3600;
 
@@ -41,11 +42,14 @@ export default async function CategoryIndiaPage({
 }) {
   if (!VALID.includes(params.cat)) notFound();
 
-  const data = await fetchJobs({
-    category: params.cat,
-    indiaOnly: "true",
-    limit: "50",
-  });
+  const [data, inrRate] = await Promise.all([
+    fetchJobs({
+      category: params.cat,
+      indiaOnly: "true",
+      limit: "50",
+    }),
+    fetchUsdToInrRate(),
+  ]);
   const jobs = data?.jobs ?? [];
 
   return (
@@ -58,7 +62,7 @@ export default async function CategoryIndiaPage({
       </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {jobs.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <JobCard key={job.id} job={job} inrRate={inrRate} />
         ))}
       </div>
     </div>

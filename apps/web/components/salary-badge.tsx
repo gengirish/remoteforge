@@ -6,6 +6,8 @@ interface SalaryBadgeProps {
   salaryMax?: number | null;
   payMin?: number;
   payMax?: number;
+  /** Pass from server for DB-backed Frankfurter rate; falls back to env on client. */
+  inrRate?: number;
   className?: string;
 }
 
@@ -14,11 +16,12 @@ export function SalaryBadge({
   salaryMax,
   payMin,
   payMax,
+  inrRate,
   className,
 }: SalaryBadgeProps) {
   const min = salaryMin ?? payMin;
   const max = salaryMax ?? payMax;
-  const formatted = formatSalaryRange(min, max);
+  const formatted = formatSalaryRange(min, max, inrRate);
 
   if (!formatted) return null;
 

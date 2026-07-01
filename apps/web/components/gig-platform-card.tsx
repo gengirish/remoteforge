@@ -18,9 +18,10 @@ const TYPE_COLORS: Record<string, string> = {
 interface GigPlatformCardProps {
   platform: GigPlatform;
   className?: string;
+  inrRate?: number;
 }
 
-export function GigPlatformCard({ platform, className }: GigPlatformCardProps) {
+export function GigPlatformCard({ platform, className, inrRate }: GigPlatformCardProps) {
   const initial = platform.name.charAt(0).toUpperCase();
 
   return (
@@ -62,7 +63,7 @@ export function GigPlatformCard({ platform, className }: GigPlatformCardProps) {
       </div>
 
       <div className="mt-4 space-y-1.5">
-        <SalaryBadge payMin={platform.payMin} payMax={platform.payMax} />
+        <SalaryBadge payMin={platform.payMin} payMax={platform.payMax} inrRate={inrRate} />
         <OnboardingTimeline days={platform.onboardingDays} />
       </div>
 

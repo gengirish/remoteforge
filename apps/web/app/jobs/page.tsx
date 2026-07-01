@@ -4,6 +4,7 @@ import { JobsPagination, JobsToolbar } from "@/components/jobs-toolbar";
 import { JobsToolbarSkeleton } from "@/components/jobs-toolbar-skeleton";
 import { PageHeader } from "@/components/page-header";
 import { fetchJobs } from "@/lib/data";
+import { fetchUsdToInrRate } from "@/lib/currency";
 import { jobsListingMetadata } from "@/lib/seo";
 
 export const metadata = jobsListingMetadata();
@@ -25,7 +26,10 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   if (searchParams.indiaOnly === "true") params.indiaOnly = "true";
   if (searchParams.search) params.search = searchParams.search;
 
-  const data = await fetchJobs(params);
+  const [data, inrRate] = await Promise.all([
+    fetchJobs(params),
+    fetchUsdToInrRate(),
+  ]);
   const jobs = data?.jobs ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
@@ -41,7 +45,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       </Suspense>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {jobs.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <JobCard key={job.id} job={job} inrRate={inrRate} />
         ))}
       </div>
       {jobs.length === 0 && (

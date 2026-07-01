@@ -1,6 +1,11 @@
 import { Worker } from "bullmq";
 import { prisma } from "@intelliforge/db";
-import { ingestSource, type IngestSource } from "@intelliforge/ingestion";
+import {
+  ingestSource,
+  runIngestion,
+  syncUsdInrRate,
+  type IngestSource,
+} from "@intelliforge/ingestion";
 import { scheduleIngestion } from "./cron";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
@@ -12,10 +17,19 @@ const worker = new Worker(
     const source = (job.data.source ?? "ingest-all") as string;
     console.log(`[worker] Processing: ${job.name}`, job.data);
 
+    if (source === "sync-exchange-rate") {
+      const fx = await syncUsdInrRate();
+      console.log("[ingestion] exchange rate:", fx);
+      return;
+    }
+
     if (source === "ingest-all") {
-      for (const s of ["remotive", "wwr", "remoteok"] as IngestSource[]) {
-        const result = await ingestSource(s);
-        console.log(`[ingestion] ${result.source}: ${result.upserted} jobs`, result.error ?? "");
+      const results = await runIngestion();
+      for (const result of results) {
+        console.log(
+          `[ingestion] ${result.source}: ${result.upserted} jobs`,
+          result.error ?? "",
+        );
       }
       return;
     }

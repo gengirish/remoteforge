@@ -1,5 +1,18 @@
 export { prisma, PrismaClient } from "./client";
 export { loadAffiliateSettings } from "./affiliate-settings";
+export {
+  USD_INR_PAIR,
+  getUsdToInrRate,
+  getUsdToInrRateFromEnv,
+  getLatestExchangeRate,
+  isExchangeRateStale,
+  upsertExchangeRate,
+} from "./exchange-rate";
+export {
+  currentQuotaMonth,
+  getApiQuotaUsage,
+  acquireApiQuota,
+} from "./api-quota";
 export type {
   Job,
   GigPlatform,

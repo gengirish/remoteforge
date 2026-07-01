@@ -41,6 +41,19 @@ export function gigsListingMetadata(): Metadata {
   };
 }
 
+export function indiaAiGigStarterMetadata(): Metadata {
+  return {
+    title: "AI Gig Jobs India 2026: Starter Path | RemoteForge",
+    description:
+      "Start AI annotation jobs in India: RLHF platforms like Outlier AI India, Alignerr, Toloka & Prolific. Week-by-week onboarding plan for students and freelancers.",
+    openGraph: {
+      title: "India AI Gig Starter Path — RemoteForge",
+      description:
+        "AI annotation jobs India, RLHF jobs India, and Outlier AI India — your week-by-week starter guide.",
+    },
+  };
+}
+
 export function jobJsonLd(job: Job) {
   const postedDate = new Date(job.postedAt);
   const validThrough = new Date(postedDate);

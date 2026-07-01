@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2 } from "lucide-react";
 import { ApplyTrackButton } from "@/components/apply-track-button";
@@ -11,6 +12,7 @@ import { SalaryBadge } from "@/components/salary-badge";
 import { Button } from "@/components/ui/button";
 import { CoverLetterGenerator } from "@/components/cover-letter-generator";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
+import { fetchUsdToInrRate } from "@/lib/currency";
 import { apiGoUrl } from "@/lib/api-url";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
 
@@ -30,7 +32,10 @@ export async function generateMetadata({ params }: JobDetailPageProps) {
 }
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
-  const job = await fetchJobBySlug(params.slug);
+  const [job, inrRate] = await Promise.all([
+    fetchJobBySlug(params.slug),
+    fetchUsdToInrRate(),
+  ]);
   if (!job) notFound();
 
   const jsonLd = jobJsonLd(job);
@@ -87,9 +92,22 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
       <article className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-8 sm:px-8">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary font-display text-lg font-bold text-primary-foreground shadow-sm">
-              {initial}
-            </div>
+            {job.companyLogo ? (
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-border">
+                <Image
+                  src={job.companyLogo}
+                  alt=""
+                  fill
+                  className="object-contain p-1.5"
+                  sizes="56px"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary font-display text-lg font-bold text-primary-foreground shadow-sm">
+                {initial}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -102,7 +120,11 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 <IndiaBadge accepted={job.indiaFriendly} />
               </div>
               <div className="mt-4">
-                <SalaryBadge salaryMin={job.salaryMin} salaryMax={job.salaryMax} />
+                <SalaryBadge
+                  salaryMin={job.salaryMin}
+                  salaryMax={job.salaryMax}
+                  inrRate={inrRate}
+                />
               </div>
               {job.tags.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">

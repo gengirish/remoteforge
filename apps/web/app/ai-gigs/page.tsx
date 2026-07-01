@@ -2,6 +2,8 @@ import Link from "next/link";
 import { GigPlatformCard } from "@/components/gig-platform-card";
 import { PageHeader } from "@/components/page-header";
 import { fetchGigPlatforms } from "@/lib/data";
+import { fetchUsdToInrRate } from "@/lib/currency";
+import { getAllComparisons } from "@/lib/gig-comparisons";
 import { gigsListingMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -19,7 +21,10 @@ export default async function AiGigsPage({
   if (searchParams.type) params.type = searchParams.type;
   if (searchParams.indiaOnly === "true") params.indiaOnly = "true";
 
-  const data = await fetchGigPlatforms(params);
+  const [data, inrRate] = await Promise.all([
+    fetchGigPlatforms(params),
+    fetchUsdToInrRate(),
+  ]);
   const platforms = data?.platforms ?? [];
   const indiaPlatforms = platforms.filter((p) => p.indiaAccepted);
   const internationalPlatforms = platforms.filter((p) => !p.indiaAccepted);
@@ -33,6 +38,7 @@ export default async function AiGigsPage({
   };
 
   const indiaOnly = searchParams.indiaOnly === "true";
+  const comparisons = getAllComparisons();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -40,6 +46,14 @@ export default async function AiGigsPage({
         title="AI Gig Platforms"
         description="Compare RLHF, annotation, and evaluation platforms — pay, onboarding time, and India eligibility."
       >
+        <p className="mt-4 text-sm">
+          <Link
+            href="/guides/ai-gigs-india-starter"
+            className="font-medium text-primary hover:underline"
+          >
+            New to AI gigs? Read the India starter guide →
+          </Link>
+        </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <Link
             href={filterHref(undefined, indiaOnly)}
@@ -74,6 +88,21 @@ export default async function AiGigsPage({
         </div>
       </PageHeader>
 
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold">Popular comparisons</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {comparisons.map((c) => (
+            <Link
+              key={c.slug}
+              href={`/ai-gigs/compare/${c.slug}`}
+              className="filter-pill"
+            >
+              {c.title}
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="mt-10">
         <h2 className="flex items-center gap-2 text-xl font-semibold">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -84,7 +113,7 @@ export default async function AiGigsPage({
         </h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {indiaPlatforms.map((p) => (
-            <GigPlatformCard key={p.id} platform={p} />
+            <GigPlatformCard key={p.id} platform={p} inrRate={inrRate} />
           ))}
         </div>
         {indiaPlatforms.length === 0 && (
@@ -105,7 +134,7 @@ export default async function AiGigsPage({
           </h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {internationalPlatforms.map((p) => (
-              <GigPlatformCard key={p.id} platform={p} />
+              <GigPlatformCard key={p.id} platform={p} inrRate={inrRate} />
             ))}
           </div>
         </section>

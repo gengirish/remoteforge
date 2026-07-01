@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JobCard } from "@/components/job-card";
 import { fetchAllTags, fetchJobs } from "@/lib/data";
+import { fetchUsdToInrRate } from "@/lib/currency";
 
 export const revalidate = 3600;
 
@@ -30,7 +31,10 @@ export default async function TagIndiaPage({
   params: { tag: string };
 }) {
   const tag = decodeURIComponent(params.tag);
-  const data = await fetchJobs({ tags: tag, indiaOnly: "true", limit: "50" });
+  const [data, inrRate] = await Promise.all([
+    fetchJobs({ tags: tag, indiaOnly: "true", limit: "50" }),
+    fetchUsdToInrRate(),
+  ]);
   const jobs = data?.jobs ?? [];
 
   return (
@@ -41,7 +45,7 @@ export default async function TagIndiaPage({
       </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {jobs.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <JobCard key={job.id} job={job} inrRate={inrRate} />
         ))}
       </div>
     </div>

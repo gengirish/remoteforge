@@ -29,11 +29,18 @@ export async function syncCompanyProfiles(): Promise<void> {
     const acceptRate = total > 0 ? indiaCount / total : 0;
     const slug = toSlug(group.company);
 
+    const logoJob = await prisma.job.findFirst({
+      where: { company: group.company, companyLogo: { not: null }, isActive: true },
+      select: { companyLogo: true },
+      orderBy: { postedAt: "desc" },
+    });
+
     await prisma.companyProfile.upsert({
       where: { name: group.company },
       create: {
         name: group.company,
         slug,
+        logoUrl: logoJob?.companyLogo ?? null,
         totalJobsPosted: total,
         indiaFriendlyCount: indiaCount,
         indiaAcceptRate: acceptRate,
@@ -42,6 +49,7 @@ export async function syncCompanyProfiles(): Promise<void> {
         totalJobsPosted: total,
         indiaFriendlyCount: indiaCount,
         indiaAcceptRate: acceptRate,
+        ...(logoJob?.companyLogo ? { logoUrl: logoJob.companyLogo } : {}),
       },
     });
   }

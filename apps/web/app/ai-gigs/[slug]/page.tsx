@@ -13,6 +13,7 @@ import {
   fetchIndiaGigAlternatives,
 } from "@/lib/data";
 import { apiGoUrl } from "@/lib/api-url";
+import { fetchUsdToInrRate } from "@/lib/currency";
 import { gigJsonLd, gigMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function GigDetailPage({ params }: { params: { slug: string } }) {
-  const platform = await fetchGigBySlug(params.slug);
+  const [platform, inrRate] = await Promise.all([
+    fetchGigBySlug(params.slug),
+    fetchUsdToInrRate(),
+  ]);
   if (!platform) notFound();
 
   const alternatives = platform.indiaAccepted
@@ -98,7 +102,7 @@ export default async function GigDetailPage({ params }: { params: { slug: string
         <div className="px-6 py-8 sm:px-8">
           <p className="leading-relaxed text-muted-foreground">{platform.description}</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <SalaryBadge payMin={platform.payMin} payMax={platform.payMax} />
+            <SalaryBadge payMin={platform.payMin} payMax={platform.payMax} inrRate={inrRate} />
             <OnboardingTimeline days={platform.onboardingDays} />
           </div>
           <div className="mt-8 border-t border-border pt-8">
@@ -133,7 +137,7 @@ export default async function GigDetailPage({ params }: { params: { slug: string
           </p>
           <div className="mt-4 grid gap-4">
             {alternatives.map((alt) => (
-              <GigPlatformCard key={alt.id} platform={alt} />
+              <GigPlatformCard key={alt.id} platform={alt} inrRate={inrRate} />
             ))}
           </div>
         </section>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Job } from "@intelliforge/db";
 import { Building2 } from "lucide-react";
 import { apiGoUrl } from "@/lib/api-url";
@@ -11,17 +12,39 @@ interface JobCardProps {
   job: Job;
   className?: string;
   matchScore?: number;
+  inrRate?: number;
 }
 
-export function JobCard({ job, className }: JobCardProps) {
+function CompanyAvatar({ job }: { job: Job }) {
   const initial = job.company.charAt(0).toUpperCase();
 
+  if (job.companyLogo) {
+    return (
+      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-muted ring-1 ring-border">
+        <Image
+          src={job.companyLogo}
+          alt=""
+          fill
+          className="object-contain p-1"
+          sizes="44px"
+          unoptimized
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-display text-sm font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+      {initial}
+    </div>
+  );
+}
+
+export function JobCard({ job, className, inrRate }: JobCardProps) {
   return (
     <article className={cn("card-surface group flex flex-col p-5", className)}>
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-display text-sm font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-          {initial}
-        </div>
+        <CompanyAvatar job={job} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -44,7 +67,11 @@ export function JobCard({ job, className }: JobCardProps) {
       </div>
 
       <div className="mt-4">
-        <SalaryBadge salaryMin={job.salaryMin} salaryMax={job.salaryMax} />
+        <SalaryBadge
+          salaryMin={job.salaryMin}
+          salaryMax={job.salaryMax}
+          inrRate={inrRate}
+        />
       </div>
 
       {job.tags.length > 0 && (

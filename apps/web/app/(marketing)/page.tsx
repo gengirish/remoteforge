@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { EmailCapture } from "@/components/email-capture";
 import { Button } from "@/components/ui/button";
 import { fetchHomeData, fetchRecommendedJobs, fetchIncomeReport } from "@/lib/data";
+import { fetchUsdToInrRate } from "@/lib/currency";
 import { LandingTabs } from "./landing-tabs";
 import { ReferralCapture } from "@/components/referral-capture";
 
@@ -18,10 +19,11 @@ export default async function HomePage() {
     // Clerk not configured — skip personalization
   }
 
-  const [homeData, recommended, report] = await Promise.all([
+  const [homeData, recommended, report, inrRate] = await Promise.all([
     fetchHomeData(),
     fetchRecommendedJobs(userId),
     fetchIncomeReport(),
+    fetchUsdToInrRate(),
   ]);
 
 
@@ -101,6 +103,7 @@ export default async function HomePage() {
           jobs={homeData?.jobs ?? []}
           gigs={homeData?.gigs ?? []}
           recommendedJobs={recommended?.personalized ? recommended.jobs : undefined}
+          inrRate={inrRate}
         />
         <section className="mt-20">
           <EmailCapture />
