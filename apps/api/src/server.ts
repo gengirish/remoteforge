@@ -16,6 +16,7 @@ import {
   handleGoRedirect,
   handleGigSlugs,
   handleHealth,
+  handleHealthDeep,
   handleHome,
   handleIngest,
   handleInternalStats,
@@ -76,13 +77,20 @@ app.use(
   }),
 );
 
-app.get("/health", async (c) => {
-  const { status, body } = await handleHealth();
+app.get("/health", (c) => {
+  const { status, body } = handleHealth();
   return c.json(body, status);
 });
 
-app.get("/api/health", async (c) => {
-  const { status, body } = await handleHealth();
+app.get("/api/health", (c) => {
+  const { status, body } = handleHealth();
+  return c.json(body, status);
+});
+
+// DB-backed readiness. Manual use only — never point an uptime monitor or a
+// platform health check at this, it keeps the Neon compute awake.
+app.get("/api/health/deep", async (c) => {
+  const { status, body } = await handleHealthDeep();
   return c.json(body, status);
 });
 

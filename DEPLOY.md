@@ -43,7 +43,8 @@ curl https://remoteforge-api.fly.dev/api/home
 
 | Route | Description |
 |-------|-------------|
-| `GET /health` | Liveness |
+| `GET /health` | Liveness — no DB access (keep it that way; the Fly check polls it) |
+| `GET /api/health/deep` | Readiness — DB-backed, cached 5 min, manual use only |
 | `GET /api/home` | Landing stats + featured |
 | `GET /api/jobs` | Job listings |
 | `GET /api/jobs/by-slug/:slug?full=true` | Job detail |

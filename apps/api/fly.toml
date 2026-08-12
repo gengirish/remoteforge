@@ -14,8 +14,10 @@ primary_region = "bom"
 
   [[http_service.checks]]
     grace_period = "60s"
-    interval = "30s"
+    interval = "60s"
     method = "GET"
+    # Liveness only — must stay on a route that does not query Postgres,
+    # otherwise the Neon compute never autosuspends.
     path = "/health"
     timeout = "10s"
 

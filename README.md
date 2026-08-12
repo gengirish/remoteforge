@@ -79,7 +79,8 @@ Live: `https://remoteforge-api.fly.dev`
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/health` | GET | Liveness |
+| `/health` | GET | Liveness — no DB access |
+| `/api/health/deep` | GET | Readiness — DB counts, cached 5 min |
 | `/api/home` | GET | Landing stats |
 | `/api/jobs` | GET | Paginated jobs |
 | `/api/jobs/by-slug/:slug` | GET | Job detail |

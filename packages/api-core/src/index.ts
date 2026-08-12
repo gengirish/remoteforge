@@ -13,6 +13,7 @@ export {
   handleGigsGet,
   handleGoRedirect,
   handleHealth,
+  handleHealthDeep,
   handleHome,
   handleIngest,
   handleInternalStats,

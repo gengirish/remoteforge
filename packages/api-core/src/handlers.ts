@@ -15,15 +15,44 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(ip).digest("hex").slice(0, 16);
 }
 
-export async function handleHealth() {
+// Liveness only — deliberately never touches Postgres. Fly polls this on a
+// timer, and any query here keeps the Neon compute from ever autosuspending
+// (a DB-backed check billed ~24h/day of compute for zero traffic).
+export function handleHealth() {
+  return {
+    status: 200 as const,
+    body: ok({ status: "healthy", uptime: Math.round(process.uptime()), timestamp: new Date().toISOString() }),
+  };
+}
+
+const DEEP_HEALTH_TTL_MS = 5 * 60 * 1000;
+let deepHealthCache: { at: number; jobs: number; gigs: number; subscriberCount: number; weeklyClicks: number } | null =
+  null;
+
+// Readiness — hits the DB, so it is cached and must never be wired to an
+// automated/interval check. Use it for manual or post-deploy smoke tests.
+export async function handleHealthDeep() {
   try {
-    const [jobs, gigs, subscriberCount, weeklyClicks] = await Promise.all([
-      prisma.job.count({ where: { isActive: true } }),
-      prisma.gigPlatform.count({ where: { isActive: true } }),
-      prisma.subscriber.count(),
-      prisma.jobClick.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
-    ]);
-    return { status: 200 as const, body: ok({ status: "healthy", database: "connected", jobs, gigs, subscriberCount, weeklyClicks, timestamp: new Date().toISOString() }) };
+    if (!deepHealthCache || Date.now() - deepHealthCache.at > DEEP_HEALTH_TTL_MS) {
+      const [jobs, gigs, subscriberCount, weeklyClicks] = await Promise.all([
+        prisma.job.count({ where: { isActive: true } }),
+        prisma.gigPlatform.count({ where: { isActive: true } }),
+        prisma.subscriber.count(),
+        prisma.jobClick.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+      ]);
+      deepHealthCache = { at: Date.now(), jobs, gigs, subscriberCount, weeklyClicks };
+    }
+    const { at, ...counts } = deepHealthCache;
+    return {
+      status: 200 as const,
+      body: ok({
+        status: "healthy",
+        database: "connected",
+        ...counts,
+        cachedAt: new Date(at).toISOString(),
+        timestamp: new Date().toISOString(),
+      }),
+    };
   } catch (err) {
     return {
       status: 503 as const,
