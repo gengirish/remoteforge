@@ -16,11 +16,12 @@ import {
   type GigComparison,
 } from "@/lib/gig-comparisons";
 import type { GigPlatform } from "@intelliforge/db";
+import { siteUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export const revalidate = 3600;
 
-const BASE_URL = "https://remoteforge.in";
+const BASE_URL = siteUrl;
 
 const TYPE_COLORS: Record<string, string> = {
   rlhf: "bg-violet-100 text-violet-800",

@@ -5,6 +5,7 @@ import { Sora, Source_Sans_3 } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { clerkPublishableKey, isClerkEnabled } from "@/lib/clerk-config";
+import { siteDomain, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -20,9 +21,19 @@ const fontBody = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
+  // Resolves every relative metadata URL (og:image, per-page canonicals) against
+  // the real origin. Without it Next falls back to localhost at build time.
+  metadataBase: new URL(siteUrl),
   title: "AI Gig Work India 2026 — Compare Pay & Eligibility | RemoteForge",
   description:
     "Compare Outlier, Appen, TELUS and more — pay, India eligibility, onboarding time. Plus remote jobs that hire from India.",
+  // No `url` or `alternates.canonical` here on purpose: child pages inherit root
+  // metadata, so a value set here would canonicalize every page to the homepage.
+  openGraph: {
+    siteName: "RemoteForge",
+    type: "website",
+    locale: "en_IN",
+  },
 };
 
 const themeInitScript = `(function(){try{var k='remoteforge-theme';var s=localStorage.getItem(k);var d=s==='dark'||(s!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
@@ -48,7 +59,7 @@ export default function RootLayout({
       <body>
         <Script
           defer
-          data-domain="remoteforge.in"
+          data-domain={siteDomain}
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
         />

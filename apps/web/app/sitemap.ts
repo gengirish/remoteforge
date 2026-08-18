@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { fetchAllCategories, fetchAllTags, fetchGigSlugs, fetchJobSlugs } from "@/lib/data";
 import { getComparisonSlugs } from "@/lib/gig-comparisons";
+import { siteUrl } from "@/lib/site";
 
-const BASE = "https://remoteforge.in";
+const BASE = siteUrl;
 
 export const revalidate = 3600;
 

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Job } from "@intelliforge/db";
+import { siteUrl } from "@/lib/site";
 
 const FORGEAHEAD_URL =
   process.env.NEXT_PUBLIC_FORGEAHEAD_URL ??
@@ -11,8 +12,7 @@ interface ScoreResumeCTAProps {
 }
 
 export function ScoreResumeCTA({ job }: ScoreResumeCTAProps) {
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://remoteforge.in";
+  const appUrl = siteUrl;
 
   const deepLink =
     `${FORGEAHEAD_URL}/resume/score?` +
