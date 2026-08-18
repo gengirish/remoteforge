@@ -72,7 +72,7 @@ pnpm ingest       # manual job ingestion
 
 ## Deploy
 
-- **Web**: Vercel — root `vercel.json`, Node 22. See `DEPLOY.md`.
+- **Web**: Vercel — project root is `apps/web`, configured by `apps/web/vercel.json`. See `DEPLOY.md`.
 - **Worker**: `workers/ingestion` → Fly.io bom (needs `REDIS_URL`).
 - **DB**: Neon PostgreSQL with `sslmode=require`.
 
