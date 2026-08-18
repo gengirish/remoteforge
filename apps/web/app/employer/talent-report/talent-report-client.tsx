@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { getApiUrl } from "@/lib/api-url";
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 type Report = {
   topSkills: { skill: string; count: number }[];
@@ -19,6 +20,25 @@ declare global {
 }
 
 export default function TalentReportClient({
+  report,
+  isSubscriber,
+  employerId: _employerId,
+}: {
+  report: Report;
+  isSubscriber: boolean;
+  employerId: string;
+}) {
+  if (!isClerkEnabled) return null;
+  return (
+    <TalentReportClientInner
+      report={report}
+      isSubscriber={isSubscriber}
+      employerId={_employerId}
+    />
+  );
+}
+
+function TalentReportClientInner({
   report,
   isSubscriber,
   employerId: _employerId,

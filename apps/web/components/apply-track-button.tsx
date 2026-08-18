@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 type AppStatus = "applied" | "interviewing" | "offered" | "rejected" | "ghosted";
 
@@ -23,6 +24,30 @@ const STATUS_COLORS: Record<AppStatus, string> = {
 };
 
 export function ApplyTrackButton({
+  jobId,
+  applyUrl,
+  apiUrl,
+}: {
+  jobId: string;
+  applyUrl: string;
+  apiUrl: string;
+}) {
+  if (!isClerkEnabled) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Button asChild size="lg" className="w-fit">
+          <a href={applyUrl} target="_blank" rel="noopener noreferrer">
+            Apply to this job →
+          </a>
+        </Button>
+      </div>
+    );
+  }
+
+  return <ApplyTrackButtonInner jobId={jobId} applyUrl={applyUrl} apiUrl={apiUrl} />;
+}
+
+function ApplyTrackButtonInner({
   jobId,
   applyUrl,
   apiUrl,

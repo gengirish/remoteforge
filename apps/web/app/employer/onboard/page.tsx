@@ -1,5 +1,4 @@
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
-import OnboardClient from "./onboard-client";
+import { EmployerOnboardAuth } from "./employer-onboard-auth";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -15,19 +14,7 @@ export default function EmployerOnboardPage() {
         <p className="mb-8 text-sm text-gray-500">
           Takes 60 seconds. Post your first job free.
         </p>
-        <SignedIn>
-          <OnboardClient />
-        </SignedIn>
-        <SignedOut>
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-6 text-center">
-            <p className="mb-4 text-sm text-gray-700">Sign in to create your employer profile.</p>
-            <SignInButton mode="modal">
-              <button className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-                Sign in to continue
-              </button>
-            </SignInButton>
-          </div>
-        </SignedOut>
+        <EmployerOnboardAuth />
       </div>
     </main>
   );

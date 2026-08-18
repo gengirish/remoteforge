@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Sora, Source_Sans_3 } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { clerkPublishableKey, isClerkEnabled } from "@/lib/clerk-config";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -31,8 +32,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-
   const body = (
     <div className={`${fontDisplay.variable} ${fontBody.variable} font-sans`}>
       <SiteHeader />
@@ -53,11 +52,12 @@ export default function RootLayout({
           src="https://plausible.io/js/script.js"
           strategy="afterInteractive"
         />
-        {clerkEnabled ? (
-          <ClerkProvider>{body}</ClerkProvider>
-        ) : (
-          body
-        )}
+        {/* Always mount ClerkProvider so client hooks never run outside context. */}
+        <ClerkProvider
+          publishableKey={isClerkEnabled ? clerkPublishableKey : undefined}
+        >
+          {body}
+        </ClerkProvider>
       </body>
     </html>
   );

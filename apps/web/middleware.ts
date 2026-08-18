@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-
-const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 const isProtected = createRouteMatcher([
   "/profile(.*)",
@@ -12,7 +11,7 @@ const isProtected = createRouteMatcher([
   "/employer/talent-report(.*)",
 ]);
 
-export default clerkEnabled
+export default isClerkEnabled
   ? clerkMiddleware(async (auth, req) => {
       if (isProtected(req)) await auth.protect();
     })

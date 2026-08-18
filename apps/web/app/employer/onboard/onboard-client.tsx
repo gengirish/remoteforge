@@ -4,8 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { getApiUrl } from "@/lib/api-url";
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 export default function OnboardClient() {
+  if (!isClerkEnabled) return null;
+  return <OnboardClientInner />;
+}
+
+function OnboardClientInner() {
   const { user } = useUser();
   const router = useRouter();
   const [form, setForm] = useState({

@@ -6,3 +6,6 @@ dist
 .env.local
 *.tsbuildinfo
 .DS_Store
+
+# Vercel CLI local state (contains VERCEL_OIDC_TOKEN)
+.vercel

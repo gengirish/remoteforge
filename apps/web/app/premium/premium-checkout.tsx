@@ -2,8 +2,21 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 export function PremiumCheckout() {
+  if (!isClerkEnabled) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Premium checkout requires sign-in, which is not configured yet.
+      </p>
+    );
+  }
+
+  return <PremiumCheckoutInner />;
+}
+
+function PremiumCheckoutInner() {
   const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";

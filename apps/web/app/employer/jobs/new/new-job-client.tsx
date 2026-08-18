@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { getApiUrl } from "@/lib/api-url";
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 const TAG_SUGGESTIONS = [
   "React", "TypeScript", "Node.js", "Python", "Go", "Rust",
@@ -11,6 +12,11 @@ const TAG_SUGGESTIONS = [
 ];
 
 export default function NewJobClient() {
+  if (!isClerkEnabled) return null;
+  return <NewJobClientInner />;
+}
+
+function NewJobClientInner() {
   const { user } = useUser();
   const router = useRouter();
   const [form, setForm] = useState({

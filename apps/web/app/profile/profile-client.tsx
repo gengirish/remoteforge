@@ -4,6 +4,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { getPublicApiUrl } from "@/lib/api-url";
+import { isClerkEnabled } from "@/lib/clerk-config";
 
 type Job = {
   id: string;
@@ -24,6 +25,24 @@ type ProfileForm = {
 };
 
 export function ProfileClient() {
+  if (!isClerkEnabled) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12">
+        <h1 className="text-2xl font-bold">My Profile</h1>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Sign-in is not configured.{" "}
+          <Link href="/jobs" className="text-primary hover:underline">
+            Browse jobs →
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  return <ProfileClientInner />;
+}
+
+function ProfileClientInner() {
   const { user, isLoaded } = useUser();
   const { getToken, userId } = useAuth();
 

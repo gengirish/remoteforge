@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Building2 } from "lucide-react";
 import { ApplyTrackButton } from "@/components/apply-track-button";
 import { auth } from "@clerk/nextjs/server";
+import { isClerkEnabled } from "@/lib/clerk-config";
 import { EmployerUpsellBanner } from "@/components/employer-upsell-banner";
 import { FeaturedCheckout } from "@/components/featured-checkout";
 import { IndiaBadge } from "@/components/india-badge";
@@ -46,32 +47,34 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   let userSkills: string[] = [];
   let userExperience = 0;
   try {
-    const { userId } = await auth();
-    if (userId) {
-      const [premiumRes, profileRes] = await Promise.all([
-        fetch(`${process.env.API_URL}/api/premium/status`, {
-          headers: { "X-Clerk-User-Id": userId },
-          cache: "no-store",
-        }),
-        fetch(`${process.env.API_URL}/api/user/profile`, {
-          headers: { "X-Clerk-User-Id": userId },
-          cache: "no-store",
-        }),
-      ]);
-      if (premiumRes.ok) {
-        const pd = (await premiumRes.json()) as { data: { isPremium: boolean } };
-        isPremium = pd.data?.isPremium ?? false;
-      }
-      if (profileRes.ok) {
-        const prof = (await profileRes.json()) as {
-          data: { skills: string[]; yearsExperience: number };
-        };
-        userSkills = prof.data?.skills ?? [];
-        userExperience = prof.data?.yearsExperience ?? 0;
+    if (isClerkEnabled) {
+      const { userId } = await auth();
+      if (userId) {
+        const [premiumRes, profileRes] = await Promise.all([
+          fetch(`${process.env.API_URL}/api/premium/status`, {
+            headers: { "X-Clerk-User-Id": userId },
+            cache: "no-store",
+          }),
+          fetch(`${process.env.API_URL}/api/user/profile`, {
+            headers: { "X-Clerk-User-Id": userId },
+            cache: "no-store",
+          }),
+        ]);
+        if (premiumRes.ok) {
+          const pd = (await premiumRes.json()) as { data: { isPremium: boolean } };
+          isPremium = pd.data?.isPremium ?? false;
+        }
+        if (profileRes.ok) {
+          const prof = (await profileRes.json()) as {
+            data: { skills: string[]; yearsExperience: number };
+          };
+          userSkills = prof.data?.skills ?? [];
+          userExperience = prof.data?.yearsExperience ?? 0;
+        }
       }
     }
   } catch {
-    // Clerk not configured in dev — skip
+    // Clerk unavailable — skip personalization
   }
 
   return (
