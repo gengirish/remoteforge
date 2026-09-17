@@ -14,7 +14,7 @@ COPY apps/api/package.json ./apps/api/
 RUN pnpm install --frozen-lockfile --filter api... --ignore-scripts
 
 FROM base AS runner
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages ./packages
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
