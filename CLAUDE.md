@@ -24,7 +24,7 @@ pnpm deploy:web               # Vercel
 
 Single workspace: `pnpm --filter api lint`, `pnpm --filter web build`, etc.
 
-**There is no test framework.** No vitest/jest/playwright, no test directories. `lint` is `tsc --noEmit` in every workspace, and CI (`.github/workflows/ci.yml`) runs lint + `pnpm --filter web build` only. Do not claim a change is verified on the basis of tests; typecheck and, where it matters, exercise the endpoint.
+**There is no test framework.** No vitest/jest/playwright, no test directories. `lint` is `tsc --noEmit` in every workspace, and CI (`.github/workflows/ci.yml`) runs lint + `pnpm --filter web build`, then on pushes to `master` a `deploy-api` job ships the API to Fly (only when `apps/api`, `packages/` or the lockfile changed; uses the `FLY_API_TOKEN` repo secret). Do not claim a change is verified on the basis of tests; typecheck and, where it matters, exercise the endpoint.
 
 ## Architecture
 

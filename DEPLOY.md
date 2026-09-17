@@ -29,8 +29,24 @@ fly secrets set --app remoteforge-api \
   CRON_SECRET="..." \
   CORS_ORIGINS="https://remoteforge.in,https://your-app.vercel.app"
 
-pnpm deploy:api
+pnpm deploy:api      # manual deploy; CI also deploys automatically, see below
 ```
+
+### Continuous deploy (GitHub Actions)
+
+The `deploy-api` job in `.github/workflows/ci.yml` runs `flyctl deploy --remote-only` with the same flags as `pnpm deploy:api`. It runs only when:
+
+- the push is to `master` (never on PRs),
+- the `build` job (lint + web build) passed, and
+- the push touches `apps/api/**`, `packages/**`, `pnpm-lock.yaml` or the root `package.json`. Web-only commits skip it.
+
+One-time setup: store an app-scoped deploy token as a repo secret, piped so it is never printed:
+
+```bash
+fly tokens create deploy -a remoteforge-api --name github-actions   | gh secret set FLY_API_TOKEN --repo gengirish/remoteforge
+```
+
+Rotate by revoking the old token (`fly tokens list -a remoteforge-api`, then `fly tokens revoke <id>`) and re-running the command above.
 
 Verify:
 
@@ -107,6 +123,11 @@ Set repo secrets:
 
 - `API_URL` = `https://remoteforge-api.fly.dev`
 - `CRON_SECRET` = same as Fly API
+
+```bash
+gh secret set API_URL --body "https://remoteforge-api.fly.dev"
+gh secret set CRON_SECRET   # prompts; paste the value set on Fly
+```
 
 Workflow: `.github/workflows/cron.yml`
 

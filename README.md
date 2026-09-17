@@ -100,6 +100,8 @@ pnpm deploy:web    # Vercel — apps/web
 pnpm ingest        # populate jobs locally
 ```
 
+Pushes to `master` that touch `apps/api`, `packages/` or the lockfile auto-deploy the API to Fly after CI passes (needs the `FLY_API_TOKEN` repo secret). See [DEPLOY.md](./DEPLOY.md#continuous-deploy-github-actions).
+
 ## Product Integrations
 
 - **ForgeAhead**: `ScoreResumeCTA` + `/api/jobs/by-slug/:slug`
