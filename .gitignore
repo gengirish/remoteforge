@@ -9,3 +9,6 @@ dist
 
 # Vercel CLI local state (contains VERCEL_OIDC_TOKEN)
 .vercel
+
+# Claude Code agent worktrees (local only)
+.claude/worktrees/
