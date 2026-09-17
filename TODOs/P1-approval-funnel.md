@@ -20,7 +20,7 @@ Ingestion upserts but never deactivates, so listings gone from the source feeds 
 ## 2. Bot filtering on `/go`
 
 - [x] In the `/go/:id` handler, flag crawler user agents (`packages/api-core/src/bot-filter.ts`, `f5d42b5`). As built: rows are kept with `isBot = true` rather than skipped, so **filter `isBot = false` in every metric query**. Crawlers still get redirected
-- [x] Skip repeat clicks from the same `ipHash` on the same target within `REPEAT_CLICK_WINDOW_MS`
+- [x] Flag repeat clicks from the same `ipHash` on the same target within `REPEAT_CLICK_WINDOW_MS`: stored with `isDuplicate = true`, so metrics filter `isBot = false and "isDuplicate" = false`
 - [x] Record `userAgent` on `GigClick` too; columns confirmed in prod 2026-09-17
 - [ ] Verify: `curl -A "Googlebot"` the redirect → 302 and no new row; a browser click → one row
 
