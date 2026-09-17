@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
-    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.mjs --external:@prisma/client --external:bullmq",
+    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.mjs --external:@prisma/client --external:bullmq --external:@x402/fetch",
     "start": "node dist/server.mjs",
     "lint": "tsc --noEmit"
   },
