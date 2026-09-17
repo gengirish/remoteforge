@@ -8,7 +8,8 @@ This folder tracks what’s **done**, **in progress**, and **planned** for Remot
 |------|---------|
 | [plan.md](./plan.md) | Master roadmap — phases, goals, dependencies |
 | [P0-production-launch.md](./P0-production-launch.md) | Ship & stabilize (deploy, ingest, cron) |
-| [P1-monetization-affiliates.md](./P1-monetization-affiliates.md) | Revenue: Turing, Toptal, Outlier, featured slots |
+| [P1-approval-funnel.md](./P1-approval-funnel.md) | **Current:** gig detail captures, approval guides, bot filtering, stale jobs |
+| [P1-monetization-affiliates.md](./P1-monetization-affiliates.md) | Revenue: Turing, Toptal, Outlier, featured slots (legacy) |
 | [P2-companies-and-seo.md](./P2-companies-and-seo.md) | WWR employers, `/companies`, blog, India SEO |
 | [P3-integrations.md](./P3-integrations.md) | ForgeAhead, Vettd, cross-auth, Clerk SSO |
 | [done.md](./done.md) | Completed work log |

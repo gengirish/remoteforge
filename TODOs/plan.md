@@ -1,151 +1,110 @@
 # RemoteForge — Master Plan
 
-**Last updated:** 2026-06-23  
-**Product:** India's home for remote jobs and AI gig work  
-**Positioning:** Free discovery + India filters + INR pay context + AI gig vertical (vs WWR TopAccess paywall)
+**Last updated:** 2026-09-17
+**Positioning:** [docs/POSITIONING.md](../docs/POSITIONING.md) v2.0: help Indians **get approved on AI training platforms**; remote jobs are secondary
+**Replaces:** the June 2026 plan ("India's home for remote jobs and AI gig work", >1,000 jobs goal)
 
 ---
 
-## Current state (snapshot)
+## Targets that matter (read first)
 
-| Area | Status |
-|------|--------|
-| Monorepo (web + api + packages + worker) | Done |
-| Split deploy (Vercel UI + Fly API) | Done |
-| Job ingestion (Remotive, WWR RSS, RemoteOK) | Built — verify prod cron |
-| AI gig platform seed + comparison UI | Done |
-| Web UI refresh (design system, dark mode, skeletons) | Done |
-| India badge + salary INR display | Done |
-| ForgeAhead / Vettd CTAs on job pages | Partial |
-| Affiliate env vars (Turing, Toptal, Outlier) | Config exists — enrollment TBD |
-| Company entity + `/companies` pages | Not started |
-| Blog / SEO content | Not started |
-| Email + WhatsApp digest cron | Built — verify prod |
-| Razorpay featured slots | Partial |
+Count **distinct humans**, not raw clicks: crawlers inflated job clicks ~6× in Jun–Sep.
 
----
+| Metric | Now (2026-09-17) | Day 30 (2026-10-17) | Day 90 (2026-12-16) |
+|---|---|---|---|
+| **Prep waitlist** (`Subscriber.source = "prep-waitlist"`) | 0 | **50 → build the Outlier pack** | 20 paid packs |
+| **Subscribers** (any source) | 0 (form was broken until 2026-09-17) | 150 | 1,000 |
+| Gig referral clicks, unique IPs/week | ~10 | 30 | 100 |
+| Sessions landing on `/ai-gigs/*` or `/guides/*` | unmeasured | > 40% | > 50% |
 
-## Phase overview
+### Day-30 gate (2026-10-17)
 
-```
-Phase 0 — Launch ready     [~]  P0-production-launch.md
-Phase 1 — Monetize         [ ]  P1-monetization-affiliates.md
-Phase 2 — Grow (SEO)       [ ]  P2-companies-and-seo.md
-Phase 3 — Ecosystem        [ ]  P3-integrations.md
+| Prep waitlist | Decision |
+|---|---|
+| **≥ 50** | Build the Outlier assessment prep pack; sell via existing Razorpay checkout |
+| **25–49** | Extend 2 weeks; add the waitlist capture to more guide pages |
+| **< 25** | Drop prep packs. Put all capture effort into a skill-tagged worker list for sourcing (stream 3 in POSITIONING §5) |
+
+Check it with:
+
+```sql
+select source, count(*) from "Subscriber" group by 1 order by 2 desc;
 ```
 
----
-
-## Phase 0 — Launch ready (P0)
-
-**Goal:** Live site with fresh jobs, stable API, working alerts.
-
-| Milestone | Success criteria |
-|-----------|------------------|
-| M0.1 Deploy | Vercel + Fly + Neon prod; env vars documented in DEPLOY.md |
-| M0.2 Ingestion | Cron runs every 6h; job count > 1,000 active |
-| M0.3 QA | India filter accurate; apply links resolve; no broken pages |
-| M0.4 Observability | Ingest errors logged; basic health check on API |
-
-**Exit:** Homepage stats reflect real DB counts; `/jobs` paginates correctly.
-
-→ Tasks: [P0-production-launch.md](./P0-production-launch.md)
+Run it once, by hand. Never put it on a timer or dashboard poll (see Cost guardrail).
 
 ---
 
-## Phase 1 — Monetize (P1)
+## Phase status
 
-**Goal:** First affiliate revenue + employer featured slots.
-
-| Milestone | Success criteria |
-|-----------|------------------|
-| M1.1 P1 affiliates live | Turing + Toptal ref links on senior-role CTAs; Outlier on gig pages |
-| M1.2 Click tracking | `/go/[id]` logs UTM + conversions field populated |
-| M1.3 Featured slots | Razorpay checkout → `isFeatured` on job; upsell banner visible |
-| M1.4 Alerts | Weekly digest sends to subscribers (AgentMail + optional WhatsApp) |
-
-**Revenue hypothesis (Month 3):** ~₹36k/mo at 500 DAU — see scaffold Part 5.
-
-**Do not build:** WWR TopAccess affiliate CTAs (no public program — scaffold verdict).
-
-→ Tasks: [P1-monetization-affiliates.md](./P1-monetization-affiliates.md)
+| Phase | Status | Tasks |
+|---|---|---|
+| P0 — Production stable | **Mostly done** (deploy, cron, region, auth) | [P0-production-launch.md](./P0-production-launch.md) |
+| **P1 — Approval funnel** (current) | **In progress** | [P1-approval-funnel.md](./P1-approval-funnel.md) |
+| P1 — Affiliates (legacy) | Partial; referrals stay live, no new job-side affiliate work | [P1-monetization-affiliates.md](./P1-monetization-affiliates.md) |
+| P2 — Companies & jobs SEO | **Deferred** until the Day-30 gate | [P2-companies-and-seo.md](./P2-companies-and-seo.md) |
+| P3 — Integrations | Deferred | [P3-integrations.md](./P3-integrations.md) |
 
 ---
 
-## Phase 2 — Grow / SEO moat (P2)
+## Current 2-week plan (2026-09-17 → 2026-10-01)
 
-**Goal:** Organic traffic from India-intent keywords + employer trust pages.
+Detail and acceptance criteria: [P1-approval-funnel.md](./P1-approval-funnel.md).
 
-| Milestone | Success criteria |
-|-----------|------------------|
-| M2.1 Top employers | `/companies` index + `/companies/[slug]` from ingested jobs + WWR bios |
-| M2.2 Content | 5+ blog posts (Outlier India guide, RLHF vs annotation, WWR vs free aggregators) |
-| M2.3 SEO plumbing | Sitemap, structured data audit, tag/category internal linking |
-| M2.4 India UX | “India OK” filter default option; INR-first salary display on cards |
+### This week: make the funnel measurable
 
-**Data source:** WWR company leaderboard (100 employers, job counts + descriptions) — jobs already flow via RSS; use metadata for pages only.
+1. **Expire stale jobs**: ingestion never sets `isActive: false`; June listings still show as active
+2. **Bot filtering on `/go`**: stop crawlers from counting as clicks
+3. **Real signup test**: one live submit per capture → `Subscriber` row with the right `source`
 
-→ Tasks: [P2-companies-and-seo.md](./P2-companies-and-seo.md)
+### Next 2 weeks: capture where the intent is
 
----
+4. **Gig detail pages** for Outlier → Mercor → Alignerr: "How to get approved from India" section, approval-alert signup, prep waitlist signup
+5. **Five approval SEO pages** (POSITIONING §7)
 
-## Phase 3 — Ecosystem (P3)
+### Housekeeping
 
-**Goal:** Closed loop with ForgeAhead + Vettd; shared auth.
-
-| Integration | RemoteForge role |
-|-------------|------------------|
-| I1 JD deep-link | Job page → ForgeAhead resume scorer (partial — CTA exists) |
-| I2 Vettd upsell | Featured employer → Vettd signup (partial) |
-| I3 Job feed API | ForgeAhead pulls `/api/jobs` with internal key |
-| I4 Skill Proof | Vettd → ForgeAhead webhook (cross-product) |
-| I5 Mock interview CTA | ForgeAhead → Vettd practice link |
-| I6 Cross-auth | `@intelliforge/cross-auth` handoff tokens (package exists) |
-
-→ Tasks: [P3-integrations.md](./P3-integrations.md)
+6. **This file**: done 2026-09-17
 
 ---
 
-## Dependencies
+## Cost guardrail: uptime checks on `/health` only
 
-```mermaid
-flowchart TD
-  P0[P0 Launch] --> P1[P1 Monetize]
-  P0 --> P2[P2 SEO]
-  P1 --> P2
-  P2 --> P3[P3 Integrations]
-  P1 --> P3
-```
+Neon scales to zero after 5 min idle; anything that touches Postgres on a shorter interval bills 24/7 (this cost ~$33/mo before).
 
-- **P2 companies** needs stable ingestion (P0) — aggregate from `Job.company`
-- **P1 affiliates** can ship in parallel with P0 QA
-- **P3** needs prod URLs + shared secrets from P0 deploy
+- Uptime monitors, Fly checks, and status pages point at **`/health`** only (liveness, no DB).
+- **Never** poll `/api/health/deep`, `/api/home`, `/api/gigs`, or any DB-backed route on a schedule.
+- The only recurring DB touches allowed are the GitHub Actions crons (ingest every 6h, digest Mondays).
+- Metrics above are read by hand, not by a scheduled job.
 
 ---
 
-## Key decisions (locked)
+## Hidden / not building
 
-| Decision | Rationale |
-|----------|-----------|
-| No WWR TopAccess affiliate | No public publisher program (Jun 2026 intel) |
-| Direct Toptal refs only | TopAccess bundle does not credit `AFFILIATE_TOPTAL_REF` |
-| WWR/RemoteOK = discovery links | No commission; link to source for apply |
-| India wedge | Filters, INR, WhatsApp alerts — competitors lack this |
-| Free vs TopAccess | Compete on free discovery, not paid bundles |
+| Surface | Why |
+|---|---|
+| `/employer`, featured slots | 0 sales, no audience to sell to |
+| `/premium` (job-seeker) | Weak wedge vs free; conflicts with positioning |
+| `/data-api` | B2B motion; needs data density first |
+| New job-board affiliates, `/companies` expansion | Jobs have no monetization path (WWR/RemoteOK/Remotive pay nothing) |
+| ">1,000 active jobs" goal | **Dropped**: job volume doesn't serve the approval promise |
 
 ---
 
-## Next 2 weeks (recommended focus)
+## Key decisions
 
-1. **P0:** Confirm prod ingestion cron + job counts vs WWR source
-2. **P1:** Enroll Turing + Toptal; wire CTAs on job detail for senior roles
-3. **P2:** Scaffold `/companies` from DB aggregation (no schema change v1)
-4. **Content:** Draft “How to get approved on Outlier AI from India” (editorial moat)
+| Date | Decision |
+|---|---|
+| 2026-06 | No WWR TopAccess affiliate (no public program); WWR/RemoteOK are discovery links only |
+| 2026-09-17 | Positioning v2.0: approval, not comparison; revenue order prep packs → referrals → sourcing → community |
+| 2026-09-17 | Prep content only, never assessment answers |
+| 2026-09-17 | Fly region `sin` (`bom` deprecated by Fly) |
+| 2026-09-17 | Signed-in user comes from a verified Clerk token, not `X-Clerk-User-Id` |
 
 ---
 
 ## References
 
-- Architecture + affiliate intel: [`remotejobs-affiliate-engine-scaffold-prompt.md`](../remotejobs-affiliate-engine-scaffold-prompt.md)
-- Deploy runbook: [`DEPLOY.md`](../DEPLOY.md)
-- WWR employer seed notes: [`data/wwr-top-employers-notes.md`](./data/wwr-top-employers-notes.md)
+- Positioning and monetization: [docs/POSITIONING.md](../docs/POSITIONING.md)
+- Deploy runbook: [DEPLOY.md](../DEPLOY.md)
+- Original architecture spec: [remotejobs-affiliate-engine-scaffold-prompt.md](../remotejobs-affiliate-engine-scaffold-prompt.md)
