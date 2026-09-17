@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { getPublicApiUrl } from "@/lib/api-url";
 import { Button } from "./ui/button";
 
@@ -10,8 +10,12 @@ interface EmailCaptureProps {
   description?: string;
   submitLabel?: string;
   source?: string;
+  /** Per-platform intent, e.g. "approval-alert:mercor". Must match the API's signal regex. */
+  signal?: string;
   defaultJobAlerts?: boolean;
   defaultGigAlerts?: boolean;
+  /** "compact" = one row (email + button + status), no phone or preference checkboxes. */
+  variant?: "full" | "compact";
 }
 
 export function EmailCapture({
@@ -19,9 +23,14 @@ export function EmailCapture({
   description = "Get a weekly digest of remote jobs and AI gig platforms open to India — curated, not spammy.",
   submitLabel = "Subscribe for free",
   source = "web",
+  signal,
   defaultJobAlerts = true,
   defaultGigAlerts = false,
+  variant = "full",
 }: EmailCaptureProps = {}) {
+  const idBase = useId();
+  const emailId = `${idBase}-email`;
+  const phoneId = `${idBase}-phone`;
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [wantsJobAlerts, setWantsJobAlerts] = useState(defaultJobAlerts);
@@ -47,6 +56,7 @@ export function EmailCapture({
           wantsJobAlerts,
           wantsGigAlerts,
           source,
+          signal,
         }),
       });
       json = await res.json();
@@ -62,6 +72,60 @@ export function EmailCapture({
       setMessage(json.error ?? "Something went wrong");
     }
   };
+
+  const buttonLabel =
+    status === "loading" ? "Subscribing..." : status === "done" ? "Subscribed!" : submitLabel;
+
+  const statusMessage = message && (
+    <p
+      role="status"
+      className={`mt-3 text-sm ${status === "error" ? "text-red-600" : "text-emerald-600"}`}
+    >
+      {message}
+    </p>
+  );
+
+  if (variant === "compact") {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="inline-flex shrink-0 rounded-full bg-primary/10 p-2 text-primary">
+            <Bell className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold">{title}</h2>
+            {description && (
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+            )}
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} className="mt-4">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label htmlFor={emailId} className="sr-only">
+              Email address
+            </label>
+            <input
+              id={emailId}
+              type="email"
+              required
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input-field flex-1"
+            />
+            <Button
+              type="submit"
+              className="shrink-0"
+              disabled={status === "loading" || status === "done"}
+            >
+              {buttonLabel}
+            </Button>
+          </div>
+          {statusMessage}
+        </form>
+      </section>
+    );
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -82,11 +146,11 @@ export function EmailCapture({
         <form onSubmit={handleSubmit} className="px-8 py-10 lg:col-span-3">
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="text-sm font-medium">
+              <label htmlFor={emailId} className="text-sm font-medium">
                 Email address
               </label>
               <input
-                id="email"
+                id={emailId}
                 type="email"
                 required
                 placeholder="you@email.com"
@@ -96,11 +160,11 @@ export function EmailCapture({
               />
             </div>
             <div>
-              <label htmlFor="phone" className="text-sm font-medium">
+              <label htmlFor={phoneId} className="text-sm font-medium">
                 WhatsApp <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               <input
-                id="phone"
+                id={phoneId}
                 type="tel"
                 placeholder="+91 ..."
                 value={phone}
@@ -137,21 +201,10 @@ export function EmailCapture({
             className="mt-6 w-full sm:w-auto"
             disabled={status === "loading" || status === "done"}
           >
-            {status === "loading"
-              ? "Subscribing..."
-              : status === "done"
-                ? "Subscribed!"
-                : submitLabel}
+            {buttonLabel}
           </Button>
 
-          {message && (
-            <p
-              role="status"
-              className={`mt-3 text-sm ${status === "error" ? "text-red-600" : "text-emerald-600"}`}
-            >
-              {message}
-            </p>
-          )}
+          {statusMessage}
         </form>
       </div>
     </section>

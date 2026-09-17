@@ -119,3 +119,55 @@ export function gigJsonLd(platform: GigPlatform) {
     },
   };
 }
+
+export function faqPageJsonLd(items: { q: string; a: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  };
+}
+
+/** Metadata for a content guide under /guides/[slug]. `url` is the absolute canonical URL. */
+export function guideMetadata(guide: {
+  title: string;
+  metaDescription: string;
+  url: string;
+  lastVerified: string;
+}): Metadata {
+  return {
+    title: `${guide.title} | RemoteForge`,
+    description: guide.metaDescription,
+    alternates: { canonical: guide.url },
+    openGraph: {
+      type: "article",
+      title: guide.title,
+      description: guide.metaDescription,
+      url: guide.url,
+      siteName: "RemoteForge",
+      modifiedTime: guide.lastVerified,
+    },
+  };
+}
+
+export function articleJsonLd(article: {
+  title: string;
+  description: string;
+  url: string;
+  dateModified: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.description,
+    mainEntityOfPage: { "@type": "WebPage", "@id": article.url },
+    dateModified: article.dateModified,
+    author: { "@type": "Organization", name: "RemoteForge" },
+    publisher: { "@type": "Organization", name: "RemoteForge" },
+  };
+}

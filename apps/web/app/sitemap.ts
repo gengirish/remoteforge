@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { guideSlugs } from "@/content/guides";
 import { fetchAllCategories, fetchAllTags, fetchGigSlugs, fetchJobSlugs } from "@/lib/data";
 import { getComparisonSlugs } from "@/lib/gig-comparisons";
 import { siteUrl } from "@/lib/site";
@@ -31,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const comparisonPages: MetadataRoute.Sitemap = comparisonSlugs.map((slug) => ({
     url: `${BASE}/ai-gigs/compare/${slug}`,
     changeFrequency: "weekly" as const,
+    priority: 0.75,
+  }));
+
+  const guidePages: MetadataRoute.Sitemap = guideSlugs.map((slug) => ({
+    url: `${BASE}/guides/${slug}`,
+    changeFrequency: "monthly" as const,
     priority: 0.75,
   }));
 
@@ -82,6 +89,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticPages,
     ...comparisonPages,
+    ...guidePages,
     ...gigPages,
     ...jobPages,
     ...tagPages,

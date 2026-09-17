@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { ArrowLeft, Building2, CircleOff } from "lucide-react";
 import { ApplyTrackButton } from "@/components/apply-track-button";
 import { auth } from "@clerk/nextjs/server";
 import { isClerkEnabled } from "@/lib/clerk-config";
@@ -21,6 +21,9 @@ interface JobDetailPageProps {
   params: { slug: string };
 }
 
+// Slugs come from active jobs only; expired jobs are still rendered on demand.
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const slugs = await fetchJobSlugs();
   return slugs.map((slug) => ({ slug }));
@@ -29,7 +32,8 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: JobDetailPageProps) {
   const job = await fetchJobBySlug(params.slug);
   if (!job) return { title: "Job not found" };
-  return jobMetadata(job);
+  const metadata = jobMetadata(job);
+  return job.isActive ? metadata : { ...metadata, robots: { index: false } };
 }
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
@@ -39,7 +43,9 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   ]);
   if (!job) notFound();
 
-  const jsonLd = jobJsonLd(job);
+  const isClosed = !job.isActive;
+  // No JobPosting structured data for expired jobs.
+  const jsonLd = isClosed ? null : jobJsonLd(job);
   const applyUrl = apiGoUrl(job.id, { type: "job", clickType: "apply" });
   const initial = job.company.charAt(0).toUpperCase();
 
@@ -80,10 +86,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
 
       <Link
         href="/jobs"
@@ -92,6 +100,24 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         <ArrowLeft className="h-4 w-4" />
         Back to jobs
       </Link>
+
+      {isClosed && (
+        <div
+          role="status"
+          className="mt-6 flex items-start gap-3 rounded-xl border border-border bg-muted px-4 py-3 text-sm"
+        >
+          <CircleOff className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <div>
+            <p className="font-medium">This job is no longer accepting applications</p>
+            <p className="mt-0.5 text-muted-foreground">
+              It has been removed from its original job board.{" "}
+              <Link href="/jobs" className="text-primary hover:underline">
+                Browse current remote jobs
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
 
       <article className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 px-6 py-8 sm:px-8">
@@ -152,31 +178,43 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             <div dangerouslySetInnerHTML={{ __html: job.description }} />
           </div>
 
-          <div className="mt-8 flex flex-col gap-4 border-t border-border pt-8">
-            <ApplyTrackButton
-              jobId={job.id}
-              applyUrl={applyUrl}
-              apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
-            />
-            <ScoreResumeCTA job={job} />
-          </div>
+          {isClosed ? (
+            <div className="mt-8 border-t border-border pt-8">
+              <Button disabled className="w-full sm:w-auto">
+                Applications closed
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mt-8 flex flex-col gap-4 border-t border-border pt-8">
+                <ApplyTrackButton
+                  jobId={job.id}
+                  applyUrl={applyUrl}
+                  apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
+                />
+                <ScoreResumeCTA job={job} />
+              </div>
 
-          <div className="mt-6">
-            <CoverLetterGenerator
-              jobTitle={job.title}
-              company={job.company}
-              jobDescription={job.description.slice(0, 1000)}
-              userSkills={userSkills}
-              userExperience={userExperience}
-              isPremium={isPremium}
-            />
-          </div>
+              <div className="mt-6">
+                <CoverLetterGenerator
+                  jobTitle={job.title}
+                  company={job.company}
+                  jobDescription={job.description.slice(0, 1000)}
+                  userSkills={userSkills}
+                  userExperience={userExperience}
+                  isPremium={isPremium}
+                />
+              </div>
+            </>
+          )}
         </div>
       </article>
 
-      <div className="mt-8">
-        <FeaturedCheckout jobId={job.id} jobTitle={job.title} />
-      </div>
+      {!isClosed && (
+        <div className="mt-8">
+          <FeaturedCheckout jobId={job.id} jobTitle={job.title} />
+        </div>
+      )}
       {job.isFeatured && (
         <div className="mt-8">
           <EmployerUpsellBanner job={job} />
