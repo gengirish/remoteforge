@@ -5,7 +5,7 @@ India's home for **remote jobs** and **AI gig work** — a Turborepo monorepo ag
 ## Stack
 
 - **Web (UI)**: Next.js 14 on Vercel — `apps/web`
-- **API**: Hono on Fly.io (bom) — `apps/api`
+- **API**: Hono on Fly.io (sin) — `apps/api`
 - **DB**: Prisma + Neon PostgreSQL
 - **Workers**: BullMQ + Redis on Fly.io (optional)
 - **Auth**: Clerk (optional)
@@ -17,7 +17,7 @@ India's home for **remote jobs** and **AI gig work** — a Turborepo monorepo ag
 Split deploy (IntelliForge pattern: Vercel UI + Fly API):
 
 ```
-apps/web (Vercel)  ──HTTPS──▶  apps/api (Fly.io bom)
+apps/web (Vercel)  ──HTTPS──▶  apps/api (Fly.io sin)
                                       │
                                  Neon Postgres
 Cron: GitHub Actions → Fly /api/jobs/ingest + /api/cron/digest

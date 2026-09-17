@@ -5,7 +5,7 @@ Split deploy matching **IntelliForge** conventions (`intelliforge-otp` + `hrms-i
 ```
 ┌─────────────────────┐         ┌──────────────────────────────┐
 │  apps/web (UI)      │  HTTPS  │  apps/api (API)              │
-│  Vercel             │ ──────▶ │  Fly.io (bom)                │
+│  Vercel             │ ──────▶ │  Fly.io (sin)                │
 │  remoteforge.in     │         │  remoteforge-api.fly.dev     │
 └─────────────────────┘         └──────────────────────────────┘
                                          │
@@ -43,7 +43,8 @@ The `deploy-api` job in `.github/workflows/ci.yml` runs `flyctl deploy --remote-
 One-time setup: store an app-scoped deploy token as a repo secret, piped so it is never printed:
 
 ```bash
-fly tokens create deploy -a remoteforge-api --name github-actions   | gh secret set FLY_API_TOKEN --repo gengirish/remoteforge
+fly tokens create deploy -a remoteforge-api --name github-actions \
+  | gh secret set FLY_API_TOKEN --repo gengirish/remoteforge
 ```
 
 Rotate by revoking the old token (`fly tokens list -a remoteforge-api`, then `fly tokens revoke <id>`) and re-running the command above.
@@ -144,7 +145,8 @@ Workflow: `.github/workflows/cron.yml`. It runs ingest every 6h (`0 */6 * * *`) 
 1. **Secret matches Fly** (from your machine; this runs a real ingest but sends no email):
 
    ```bash
-   curl -fsS -H "Authorization: Bearer $(grep '^CRON_SECRET=' apps/api/.env | cut -d= -f2- | tr -d '\"')"      https://remoteforge-api.fly.dev/api/jobs/ingest
+   curl -fsS -H "Authorization: Bearer $(grep '^CRON_SECRET=' apps/api/.env | cut -d= -f2- | tr -d '\r"')" \
+     https://remoteforge-api.fly.dev/api/jobs/ingest
    ```
 
    Expect `{"success":true,"data":{"mode":"inline","total":...}}`. A 401 means the local value differs from Fly.
