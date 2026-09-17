@@ -62,7 +62,7 @@ import {
 } from "@intelliforge/api-core";
 
 const PORT = Number(process.env.PORT ?? 8080);
-const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? "http://localhost:3000,https://remoteforge.in")
+const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? "http://localhost:3000,https://remoteforge.intelliforge.tech")
   .split(",")
   .map((s) => s.trim());
 

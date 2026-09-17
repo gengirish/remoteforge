@@ -12,6 +12,8 @@ import { authorizeCron } from "./cron-auth";
 import { computeMatchScore } from "./match-score";
 import { fail, ok } from "./response";
 
+const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://remoteforge.intelliforge.tech").replace(/\/+$/, "");
+
 function hashIp(ip: string): string {
   return createHash("sha256").update(ip).digest("hex").slice(0, 16);
 }
@@ -1342,7 +1344,7 @@ export async function handleGetReferralCode(clerkId: string | undefined) {
       signupCount: referralCode.signupCount,
       wallet: profile.wallet ?? { balancePaise: 0, totalEarnedPaise: 0 },
       referrals: referrals.map((r) => ({ status: r.status, createdAt: r.createdAt, rewardPaise: r.rewardPaise })),
-      shareUrl: `https://remoteforge.in/?ref=${referralCode.code}`,
+      shareUrl: `${SITE_URL}/?ref=${referralCode.code}`,
     }),
   };
 }
@@ -1701,13 +1703,13 @@ export async function handleV2Salary(authHeader: string | undefined, roleSlug: s
   if (!verified)
     return {
       status: 401 as const,
-      body: fail("Invalid or missing API key. Get one at remoteforge.in/data-api"),
+      body: fail(`Invalid or missing API key. Get one at ${SITE_URL}/data-api`),
     };
 
   if (!(await checkRateLimit(verified.keyId, verified.callsLimit)))
     return {
       status: 429 as const,
-      body: fail("Monthly call limit reached. Upgrade at remoteforge.in/data-api"),
+      body: fail(`Monthly call limit reached. Upgrade at ${SITE_URL}/data-api`),
     };
 
   await trackApiUsage(verified.keyId, "/api/v2/salary");
