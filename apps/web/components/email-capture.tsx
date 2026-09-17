@@ -5,11 +5,27 @@ import { useState } from "react";
 import { getPublicApiUrl } from "@/lib/api-url";
 import { Button } from "./ui/button";
 
-export function EmailCapture() {
+interface EmailCaptureProps {
+  title?: string;
+  description?: string;
+  submitLabel?: string;
+  source?: string;
+  defaultJobAlerts?: boolean;
+  defaultGigAlerts?: boolean;
+}
+
+export function EmailCapture({
+  title = "Never miss an opportunity",
+  description = "Get a weekly digest of remote jobs and AI gig platforms open to India — curated, not spammy.",
+  submitLabel = "Subscribe for free",
+  source = "web",
+  defaultJobAlerts = true,
+  defaultGigAlerts = false,
+}: EmailCaptureProps = {}) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [wantsJobAlerts, setWantsJobAlerts] = useState(true);
-  const [wantsGigAlerts, setWantsGigAlerts] = useState(false);
+  const [wantsJobAlerts, setWantsJobAlerts] = useState(defaultJobAlerts);
+  const [wantsGigAlerts, setWantsGigAlerts] = useState(defaultGigAlerts);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -17,18 +33,27 @@ export function EmailCapture() {
     e.preventDefault();
     setStatus("loading");
 
-    const res = await fetch(`${getPublicApiUrl()}/api/subscribe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        phone: phone || undefined,
-        wantsJobAlerts,
-        wantsGigAlerts,
-      }),
-    });
+    // The API expects E.164 (+919876543210); people type "+91 98765 43210".
+    const normalizedPhone = phone.replace(/[\s()-]/g, "");
 
-    const json = await res.json();
+    let json: { success?: boolean; error?: string } = {};
+    try {
+      const res = await fetch(`${getPublicApiUrl()}/api/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          phone: normalizedPhone || undefined,
+          wantsJobAlerts,
+          wantsGigAlerts,
+          source,
+        }),
+      });
+      json = await res.json();
+    } catch {
+      json = { success: false, error: "Couldn't reach the server. Please try again." };
+    }
+
     if (json.success) {
       setStatus("done");
       setMessage("You're subscribed! Check your inbox.");
@@ -47,10 +72,9 @@ export function EmailCapture() {
             <div className="inline-flex rounded-full bg-white/15 p-2.5">
               <Bell className="h-5 w-5" />
             </div>
-            <h2 className="mt-4 text-2xl font-bold">Never miss an opportunity</h2>
+            <h2 className="mt-4 text-2xl font-bold">{title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
-              Get a weekly digest of remote jobs and AI gig platforms open to
-              India — curated, not spammy.
+              {description}
             </p>
           </div>
         </div>
@@ -117,7 +141,7 @@ export function EmailCapture() {
               ? "Subscribing..."
               : status === "done"
                 ? "Subscribed!"
-                : "Subscribe for free"}
+                : submitLabel}
           </Button>
 
           {message && (

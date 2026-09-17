@@ -1,300 +1,220 @@
-# RemoteForge — Positioning & Messaging (90-Day)
+# RemoteForge — Positioning & Monetization
 
-**Version:** 1.0 · June 2026  
-**Status:** Recommended direction — gig-led primary, jobs secondary  
+**Version:** 2.0 · September 2026 (replaces v1.0, June 2026)
+**Status:** Active direction — approval-led AI gig work; remote jobs secondary
 **Owner:** IntelliForge / RemoteForge
 
 ---
 
-## 1. The bet
+## 1. What changed from v1.0 and why
 
-**Lead with AI gig work. Cross-sell remote jobs.**
+v1.0 bet on **comparing** AI gig platforms, paid for by referral and affiliate clicks. After three months the data (production DB, 2026-09-17) says that model will not pay:
 
-| Vertical | Role | Why |
+| Signal | Number | Read |
 |---|---|---|
-| **AI gig comparison** | Primary acquisition & brand | Near-zero competition in India; high intent; founder editorial moat (Outlier/RLHF experience) |
-| **India-eligible remote jobs** | Secondary & retention | Larger TAM; supports “earn remotely” umbrella; India filter is real but aggregation alone is crowded |
-| **Everything else** | Hidden or deferred | Premium, employer, Data API — only after consumer traffic proves retention |
+| Distinct IPs on gig referral clicks, Jun–Sep | ~133 | Real but tiny intent; Outlier leads (24 unique) |
+| Job clicks / distinct IPs | 3,146 / 541 | Inflated by crawlers (one week: 230 clicks from 1 IP = every job) |
+| Subscribers, users, featured slots, premium, employer subs, referrals | 0 each | No revenue and no owned audience |
+| Last job ingested | 2026-06-23 | Cron failing on empty GitHub secrets; job listings stale |
+| Signup form | Broken until v2.0 | `handleSubscribe` passed a non-column field to Prisma; every signup threw |
 
-This is not abandoning remote jobs. Jobs stay in product, SEO, and nav — they are not the **headline** until gig-led PMF is visible (traffic, referrals, repeat visits).
+Conclusions:
+
+1. **Comparison isn't the painful part.** Picking a platform is a five-minute Reddit search. The expensive pain comes **after** choosing: failing the assessment, weeks of review limbo, and "approved but no tasks."
+2. **Referral income per approved worker × low approval rate × tiny traffic ≈ ₹0.** Keep referrals, but they can't be the business.
+3. **The job vertical has no monetization path** (WWR, RemoteOK and Remotive pay no commissions). Keep it for SEO and breadth only.
+4. **We had no way to reach anyone again.** An owned WhatsApp/email list is the prerequisite for every revenue stream below.
 
 ---
 
-## 2. One-liner & elevator pitch
+## 2. One-liner
 
 ### Primary (use everywhere)
 
-> **RemoteForge helps Indians compare AI training and annotation gigs — pay, India eligibility, and onboarding — so you pick the right platform first try.**
+> **RemoteForge helps Indians get approved on AI training platforms — which ones accept India, what they pay, how long approval takes, and how to pass the assessment.**
 
-### Secondary (homepage subhead, meta description)
+### Secondary (meta, footer, jobs pages)
 
-> Also browse remote jobs filtered for India, with salary context and referral links that work.
+> Also: remote jobs that actually hire from India, with INR pay context.
 
 ### Elevator (30 seconds)
 
-> Most Indians find Outlier or Appen through random Reddit threads and waste weeks on platforms that don’t hire from India or pay less than advertised. RemoteForge is the comparison site: side-by-side pay, eligibility, onboarding time, and how to get approved. We aggregate remote jobs too, but only ones that actually hire from India.
+> Thousands of Indians hear about Outlier, Mercor or Alignerr and apply blind. Half the platforms geo-block India, assessments reject people without saying why, and approved workers sit with empty task queues. RemoteForge is the approval layer: which platforms take you, how to pass their qualification tests, and alerts when onboarding reopens. Free to browse; paid prep when you're serious.
 
-### Do not say (until validated)
+### Do not say
 
-- “50,000+ India-based remote workers” (employer page)
-- “India’s home for everything remote” (too broad)
-- “Get hired faster” as brand line (sounds like FlexJobs/WWR Pro — conflicts with free wedge)
-- “Platform” or “marketplace” in consumer-facing copy
+- "Guaranteed approval" / "get hired faster" — we can't promise it, and platforms ban cheating.
+- "Answers", "leaked tests", "assessment solutions" — gets users banned and kills the brand.
+- User counts or earnings claims we can't back with our own data.
+- "Platform" or "marketplace" in consumer copy.
 
 ---
 
-## 3. ICP (ideal customer profile)
+## 3. ICP
 
-### Primary ICP — AI gig seeker
-
-| Attribute | Detail |
-|---|---|
-| **Who** | Students, recent grads (MTech/BTech), freelancers, career switchers in India |
-| **Goal** | $15–40/hr side or full-time income from RLHF, annotation, evaluation |
-| **Pain** | Geo-blocked platforms, opaque pay, long approval loops, scam/low-pay microtask sites |
-| **Trigger** | Saw Outlier/Appen on Twitter/Reddit; needs “which one for me?” |
-| **Hair on fire?** | **Yes** — time-sensitive (bills, semester break, quit job) |
-| **Willingness to act** | Same session: compare → click apply/referral |
-| **Acquisition** | SEO (`outlier ai india`, `appen review india`, `rlhf jobs india`), WhatsApp shares, YouTube/Reddit guides |
-
-### Secondary ICP — India remote job seeker
+### Primary — AI gig applicant (India)
 
 | Attribute | Detail |
 |---|---|
-| **Who** | Engineers, designers, PMs, marketers — 2–8 YOE, India-based |
-| **Goal** | USD/EUR remote role that legally hires from India |
-| **Pain** | 80% of listings are US-only; pay shown in USD without INR context; apply → ghost |
-| **Trigger** | Laid off, salary stagnation, “remote jobs india” search |
-| **Hair on fire?** | **Medium-high** — urgent but compares many free alternatives |
-| **Acquisition** | SEO (`remote jobs india`, `react remote india`), job alerts, salary pages |
+| **Who** | STEM grads, working coders, Indic-language speakers, students with strong English |
+| **Goal** | $15–40/hr from RLHF, evaluation, coding or language tasks |
+| **Pain** | Geo-blocks, opaque rejections, long review loops, empty task queues after approval |
+| **Hair on fire?** | **Yes** — time-bound (bills, semester break, job loss) and money is on the line |
+| **Pays for** | Anything that raises approval odds or shortens time to first paid task |
+| **Most valuable segment** | Coders, math/STEM and Indic-language speakers — the scarce expertise platforms pay most for, and what sourcing buyers (§5, stream 3) want |
 
-### Not ICP (defer outbound & nav prominence)
+### Secondary — India remote job seeker
 
-| Segment | Why defer |
-|---|---|
-| Employers posting jobs | No liquidity until job-seeker traffic |
-| B2B Data API buyers | Different sales motion; needs data density first |
-| Premium subscribers | Weak wedge vs free; build after habit |
+Still served by `/jobs` for SEO and retention. Not a monetization target; no new product investment until the gig side is paying.
+
+### Not ICP (hidden until further notice)
+
+Employers posting jobs, Data API buyers, job-seeker premium subscribers.
 
 ---
 
 ## 4. Positioning statement (internal)
 
-**For** Indians earning or trying to earn from remote and AI work,  
-**who** waste time on platforms that don’t hire from India or misstate pay,  
-**RemoteForge** is the comparison and discovery layer  
-**that** shows eligibility, pay ranges, and onboarding reality in one place — free.  
-**Unlike** Remote OK, WWR, or generic job boards,  
-**we** are India-first and cover AI gig platforms no aggregator lists today.
+**For** Indians trying to earn from AI training work,
+**who** lose weeks to geo-blocks, failed assessments and empty task queues,
+**RemoteForge** is the approval layer
+**that** shows which platforms take you and prepares you to pass their qualification tests.
+**Unlike** Reddit threads, generic job boards or Remote OK,
+**we** are India-first, platform-specific, and focused on what happens after you click apply.
 
 ---
 
-## 5. Competitive frame
+## 5. Monetization
 
-| Competitor | They win on | We win on |
-|---|---|---|
-| Remote OK / Remotive | Volume, brand, SEO | India eligibility filter, INR context, gig vertical |
-| WWR TopAccess | Bundled subs, brand | Free, no lock-in, India UX, AI gigs |
-| FlexJobs | Curated paid listings | Free discovery + India focus |
-| Reddit / random blogs | “Authentic” anecdotes | Structured comparison + updated data |
-| Outlier/Appen directly | The actual work | **Choosing** which platform + referral path |
+**User-facing principle:** Browsing is free. Serious applicants pay for prep. Companies pay for vetted people.
 
-**Content battles to own (P0 SEO):**
+| # | Stream | Buyer | Status | Gate to start |
+|---|---|---|---|---|
+| 1 | **Assessment prep packs** — practice tasks, rubric walkthroughs, application review; ₹499–₹1,499 per platform (Outlier, Mercor, Alignerr first) | Applicant | **Waitlist live** (`source = "prep-waitlist"`) | ≥ 50 waitlist signups → build the Outlier pack, sell via existing Razorpay |
+| 2 | **Referral bonuses** (Outlier, Mercor, others) | Platform | Live | Keep; read each platform's terms before paid promotion |
+| 3 | **Sourcing / talent supply** — pay per qualified Indian expert (coders, STEM, Indic languages) | AI data vendors, platforms | Not started | ≥ 1,000 opted-in workers with skill tags |
+| 4 | **Community subscription** — task-availability alerts, "who's getting work" WhatsApp group | Applicant | Not started | Stream 1 shows people will pay |
 
-1. `outlier ai review india` / how to get approved  
-2. `appen vs outlier india` / RLHF vs annotation pay  
-3. `ai data annotation jobs india 2026`  
-4. `remote jobs hiring from india` (category pages)  
-5. `wwr topaccess vs free` (comparison — affiliate-safe)
-
----
-
-## 6. Messaging hierarchy (what users see)
-
-### Layer 1 — Hero (homepage, ads, social)
-
-```
-Eyebrow:    Built for India's remote workforce
-Headline:   Compare AI gigs that pay Indians $20–40/hr
-Subhead:    Pay, India eligibility, onboarding time — then apply with links that work.
-            Plus remote jobs filtered for India.
-CTA primary:   Compare AI platforms → /ai-gigs
-CTA secondary: Browse remote jobs → /jobs
-```
-
-### Layer 2 — Tab / section order
-
-1. **AI Gig Work** (default tab when not personalized)  
-2. Remote Jobs  
-3. For You (only when logged in + profile)
-
-### Layer 3 — Job detail page
-
-- India badge + pay context first  
-- Apply / referral CTA  
-- Remote jobs cross-link: “Also hiring: [similar roles]”  
-- ForgeAhead cross-sell (when live): “Prepare for this role”
-
-### Layer 4 — Gig detail page
-
-- India eligibility, pay band, onboarding timeline  
-- “How to get approved” guide link (editorial moat)  
-- Referral CTA when configured  
-- Cross-sell: “Remote jobs while you wait for approval”
-
-### Layer 5 — Footer / secondary
-
-- Salary benchmarks, community wins, income report  
-- Premium (soft upsell, not nav)  
-- Employers → `/employer` (no inflated user counts)  
-- Data API → `/developers/data-api` (not main nav)
-
----
-
-## 7. Navigation & surface area changes
-
-### Main nav (consumer)
-
-| Keep | Change |
-|---|---|
-| AI Gig Work | **First** item (rename label optional: “AI Gigs”) |
-| Remote Jobs | Second |
-| Companies | Keep — supports “who hires from India” trust |
-
-| Remove from main nav | Move to |
-|---|---|
-| Data API | Footer → “Developers” or `/developers/data-api` |
-
-### Hide or demote until Month 4+
+### Stop or hide
 
 | Surface | Action |
 |---|---|
-| `/premium` | Footer link only; no header CTA |
-| `/employer` | Footer + direct sales; remove “50,000+” until MAU proof |
-| `/data-api` | Developer section; no consumer nav |
-| `/refer` | In-app after gig apply or profile completion |
+| Employer job posts, featured slots (`/employer`) | Footer only; no sales effort |
+| Job-seeker premium (`/premium`) | Footer only |
+| Data API (`/data-api`) | Developer footer only |
+| Hire bounties (Turing, Toptal) | Leave existing CTAs; don't build more |
+
+### Guardrails
+
+- **Prep, never answers.** Nothing that reproduces live assessment content.
+- **Referral terms.** Some platforms forbid paid ads on referral links or sharing the bonus with the referee. Check before running either.
+- **Honest numbers.** Only show pay bands and approval times we can source or have collected.
 
 ---
 
-## 8. Monetization aligned to positioning
+## 6. Messaging hierarchy
 
-**Message:** Free forever for discovery. We earn when you land work.
-
-| Stream | Priority | User-facing framing |
-|---|---|---|
-| Gig platform referrals (Outlier, etc.) | P1 | “Apply via our link” — transparent, optional |
-| Hire bounties (Turing, Toptal) | P1 | On high-skill job detail only |
-| SEO + email/WhatsApp alerts | P1 | Growth, not revenue day one |
-| Employer featured slots | P2 | After job listing traffic |
-| FlexJobs upsell | P2 | “Want curated paywall boards?” — niche |
-| Premium ₹499 | P3 | Defer marketing; risks anti-positioning |
-| Data API ₹2L | P3 | B2B outbound only |
-
----
-
-## 9. 90-day messaging calendar
-
-### Days 1–30 — Own the gig comparison niche
-
-| Week | Ship / publish | Message theme |
-|---|---|---|
-| 1 | Homepage hero swap (gig-led); nav reorder | “Compare before you apply” |
-| 2 | Publish: Outlier AI India guide | Approval anxiety |
-| 3 | Publish: Appen vs Outlier India | Comparison intent |
-| 4 | Publish: RLHF vs annotation pay India | Commercial intent |
-
-**Success signals:** Organic impressions on gig pages; referral clicks; time on `/ai-gigs/*`
-
-### Days 31–60 — Layer remote jobs as “while you earn”
-
-| Week | Ship / publish | Message theme |
-|---|---|---|
-| 5 | `/jobs/tag/*/india` SEO batch | “Actually hires from India” |
-| 6 | WhatsApp gig alerts beta | “New platforms / rate changes” |
-| 7 | Community income report push | Social proof (real numbers only) |
-| 8 | WWR TopAccess comparison post | “Free vs $30/mo bundle” |
-
-**Success signals:** Email/WhatsApp signups; return visits; jobs + gigs in same session
-
-### Days 61–90 — Retention & soft monetization
-
-| Week | Ship / publish | Message theme |
-|---|---|---|
-| 9 | Application tracker prompts | “Track where you applied” |
-| 10 | Salary submit campaign | “Help Indians negotiate” |
-| 11 | Employer pilot (5 companies, no hype) | B2B quiet launch |
-| 12 | Review: double down on top 3 SEO pages | Iterate titles from Search Console |
-
-**Success signals:** WAU; pages per session; first employer or affiliate conversion attributed
-
----
-
-## 10. Metrics that prove positioning
-
-| Metric | Gig-led PMF signal | Jobs-led would need |
-|---|---|---|
-| % sessions landing on `/ai-gigs` | > 40% | N/A |
-| Referral / apply clicks per gig session | > 8% | N/A |
-| Organic traffic: gig vs job keywords | Gig grows faster | Job keywords dominate |
-| Branded search “remoteforge” | Low OK early | — |
-| Premium conversion | Ignore until Month 4 | — |
-
----
-
-## 11. Alternative path — jobs-led (if gig SEO stalls)
-
-Use only if after 60 days gig pages fail to rank/convert but job category pages take off.
-
-**One-liner swap:**
-
-> **Remote jobs that actually hire from India — filtered, with real pay context.**
-
-**Hero:** Remote jobs first tab; AI gigs as “Earn while you search” sidebar.
-
-**Risk:** Harder SEO war vs Remote OK; weaker differentiation without editorial gig moat.
-
----
-
-## 12. Copy bank (ready to paste)
-
-### Homepage meta
+### Layer 1 — Homepage (`apps/web/app/(marketing)/page.tsx`)
 
 ```
-Title: AI Gig Work India 2026 — Compare Pay & Eligibility | RemoteForge
-Description: Compare Outlier, Appen, TELUS and more — pay, India eligibility, onboarding time. Plus remote jobs that hire from India.
+Eyebrow:     For Indians breaking into AI training work
+Headline:    Get approved on AI training platforms from India
+Subhead:     Which platforms actually accept Indians, what they pay, how long approval
+             takes, and how to pass the assessment — before you lose weeks on the wrong one.
+CTA primary:   Find platforms that accept India → /ai-gigs
+CTA secondary: Read the approval guide → /guides/ai-gigs-india-starter
+Stat pills:  N AI platforms reviewed · N accept India · Also: remote jobs that hire from India → /jobs
+```
+
+Then, in order:
+
+1. **Three steps:** Pick a platform that takes you → Pass the assessment → Keep getting tasks
+2. **Approval alerts capture** (`source = "home-approval-alerts"`, gig alerts on by default): "Know when a platform opens onboarding for Indians"
+3. **Tabs:** AI Gig Work (default) · Remote Jobs · For You (signed in only)
+4. **Prep waitlist capture** (`source = "prep-waitlist"`): "Assessment prep packs — join the waitlist"
+
+The job count is left out of the hero on purpose: listings are stale until ingestion is fixed, and jobs aren't the promise.
+
+### Layer 2 — Gig detail page (next to build)
+
+- India eligibility, pay band, payout method, approval timeline
+- **"How to get approved on {platform} from India"** section — the editorial moat
+- Referral CTA
+- Platform-specific approval alert + prep waitlist capture
+
+### Layer 3 — Job pages
+
+Unchanged: India badge, INR context, apply CTA. Cross-link: "Earn while you search → AI gigs that accept India."
+
+---
+
+## 7. Next 30 days
+
+| # | Ship | Why |
+|---|---|---|
+| 1 | **Fix ingestion cron** — set the API URL and `CRON_SECRET` repo secrets `.github/workflows/cron.yml` reads | Stale listings undermine trust; the digest cron likely fails the same way |
+| 2 | **Deploy the subscribe fix + new homepage** | Owned audience starts at 0; this is the first working capture |
+| 3 | **Approval capture + prep waitlist on gig detail pages** (Outlier, Mercor, Alignerr first) | Where the only real intent is (see §1) |
+| 4 | **Five approval SEO pages** | "outlier assessment failed india", "mercor interview tips", "alignerr approval time india", "outlier ai review india", "ai training jobs india 2026" |
+| 5 | **Bot filtering on `/go` click tracking** | Conversion rates are meaningless while crawlers inflate clicks |
+
+---
+
+## 8. Metrics that prove the positioning
+
+Measure on **distinct humans**, not raw clicks.
+
+| Metric | Day-30 target | Day-90 target |
+|---|---|---|
+| Subscribers (any source) | 150 | 1,000 |
+| Prep waitlist (`source = "prep-waitlist"`) | 50 → build the Outlier pack | First 20 paid packs |
+| Gig referral clicks, unique/week | 30 | 100 |
+| Share of sessions landing on `/ai-gigs/*` or `/guides/*` | > 40% | > 50% |
+| Sourcing conversations with vendors | — | 3 (only if ≥ 1,000 skill-tagged subscribers) |
+
+**Kill criterion:** if the waitlist stays under 25 signups after 30 days with the gig pages live, drop stream 1 and go straight to building the list for stream 3.
+
+---
+
+## 9. Copy bank
+
+### Site metadata (`apps/web/app/layout.tsx`)
+
+```
+Title: Get Approved on AI Training Platforms from India (2026) | RemoteForge
+Description: Which AI training platforms accept Indians, what Outlier, Mercor, Alignerr and others pay, how long approval takes, and how to pass the assessment. Plus remote jobs that hire from India.
 ```
 
 ### AI gigs listing
 
 ```
-H1: Compare AI training & annotation platforms for India
-Sub: See pay ranges, eligibility, and how long onboarding takes — before you waste a week on the wrong platform.
+H1: AI training platforms that accept Indians
+Sub: Pay, payout method, and approval time for each — plus how to pass their qualification tests.
+```
+
+### Gig detail
+
+```
+H2: How to get approved on {Platform} from India
+Alert: Get notified when {Platform} opens onboarding for your skills
 ```
 
 ### Remote jobs listing
 
 ```
 H1: Remote jobs that hire from India
-Sub: Filtered listings with salary context. No US-only noise.
-```
-
-### Employer (revised)
-
-```
-H1: Reach India-based remote talent
-Sub: Post jobs where candidates already filter for India-friendly roles. [Remove user count until verified.]
+Sub: Filtered listings with INR pay context. No US-only noise.
 ```
 
 ---
 
-## 13. Decision log
+## 10. Decision log
 
 | Date | Decision | Rationale |
 |---|---|---|
 | 2026-06 | Gig-led primary for 90 days | Unfair advantage + hair-on-fire problem + low competition |
-| 2026-06 | Demote Premium, Data API, employer hype | Avoid platform sprawl before consumer PMF |
-| TBD | Revisit jobs-led | Only if gig SEO/conversion underperforms at Day 60 |
-
----
-
-*Next implementation step: apply homepage hero, tab default, and nav changes in `apps/web` per Section 6–7.*
+| 2026-06 | Demote Premium, Data API, employer hype | Avoid sprawl before consumer PMF |
+| 2026-09-17 | **Shift from comparison to approval** | Pain and willingness to pay come after choosing a platform; comparison alone earned nothing |
+| 2026-09-17 | **Revenue order: prep packs → referrals → sourcing → community** | Prep can earn now on existing Razorpay; sourcing is bigger but needs an owned worker list first |
+| 2026-09-17 | Hide employer, featured slots, premium, Data API | All at 0 with no audience to sell to |
+| 2026-09-17 | Fix signup capture before any growth work | Form had failed on every submit; subscriber list was 0 |

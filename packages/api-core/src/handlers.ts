@@ -193,13 +193,15 @@ const subscribeSchema = z.object({
   jobTags: z.array(z.string()).default([]),
   gigTypes: z.array(z.string()).default([]),
   frequency: z.enum(["daily", "weekly"]).default("weekly"),
+  source: z.string().max(40).optional(),
 });
 
 export async function handleSubscribe(body: unknown) {
   const parsed = subscribeSchema.safeParse(body);
-  if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.flatten().toString()) };
+  if (!parsed.success) return { status: 400 as const, body: fail("Enter a valid email and a WhatsApp number like +919876543210") };
 
-  const data = parsed.data;
+  // wantsJobAlerts is not a Subscriber column; passing it through made every create throw.
+  const { wantsJobAlerts: _wantsJobAlerts, ...data } = parsed.data;
   const subscriber = await prisma.subscriber.upsert({
     where: { email: data.email },
     create: data,
@@ -210,6 +212,8 @@ export async function handleSubscribe(body: unknown) {
       gigTypes: data.gigTypes,
       wantsGigAlerts: data.wantsGigAlerts,
       frequency: data.frequency,
+      // Keep the first-touch source, but never lose a prep-waitlist signal from an existing subscriber.
+      ...(data.source === "prep-waitlist" ? { source: data.source } : {}),
     },
   });
 

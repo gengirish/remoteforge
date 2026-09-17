@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   // Resolves every relative metadata URL (og:image, per-page canonicals) against
   // the real origin. Without it Next falls back to localhost at build time.
   metadataBase: new URL(siteUrl),
-  title: "AI Gig Work India 2026 — Compare Pay & Eligibility | RemoteForge",
+  title: "Get Approved on AI Training Platforms from India (2026) | RemoteForge",
   description:
-    "Compare Outlier, Appen, TELUS and more — pay, India eligibility, onboarding time. Plus remote jobs that hire from India.",
+    "Which AI training platforms accept Indians, what Outlier, Mercor, Alignerr and others pay, how long approval takes, and how to pass the assessment. Plus remote jobs that hire from India.",
   // No `url` or `alternates.canonical` here on purpose: child pages inherit root
   // metadata, so a value set here would canonicalize every page to the homepage.
   openGraph: {
