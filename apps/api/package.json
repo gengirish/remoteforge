@@ -10,6 +10,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/backend": "^3.18.1",
     "@hono/node-server": "^1.13.7",
     "@intelliforge/api-core": "workspace:*",
     "@prisma/client": "^6.19.0",

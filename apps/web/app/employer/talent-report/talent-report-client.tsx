@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { getApiUrl } from "@/lib/api-url";
 import { isClerkEnabled } from "@/lib/clerk-config";
 
@@ -48,6 +48,7 @@ function TalentReportClientInner({
   employerId: string;
 }) {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [upgrading, setUpgrading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
@@ -58,7 +59,7 @@ function TalentReportClientInner({
     try {
       const res = await fetch(`${getApiUrl()}/api/employer/subscription`, {
         method: "POST",
-        headers: { "X-Clerk-User-Id": user.id },
+        headers: { Authorization: `Bearer ${await getToken()}` },
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error ?? "Failed to create order");

@@ -70,7 +70,6 @@ function ApplyTrackButtonInner({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Clerk-User-Id": userId,
           Authorization: `Bearer ${token ?? ""}`,
         },
         body: JSON.stringify({ jobId, status }),

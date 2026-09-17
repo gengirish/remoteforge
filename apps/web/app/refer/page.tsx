@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ReferPage() {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) redirect("/sign-in");
-  const data = await fetchReferralCode(userId);
+  const data = await fetchReferralCode(await getToken());
   return <ReferClient data={data} />;
 }

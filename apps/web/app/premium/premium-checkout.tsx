@@ -17,7 +17,7 @@ export function PremiumCheckout() {
 }
 
 function PremiumCheckoutInner() {
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const [loading, setLoading] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
@@ -30,7 +30,7 @@ function PremiumCheckoutInner() {
     try {
       const res = await fetch(`${apiUrl}/api/premium/checkout`, {
         method: "POST",
-        headers: { "X-Clerk-User-Id": userId },
+        headers: { Authorization: `Bearer ${await getToken()}` },
       });
       const data = (await res.json()) as {
         data: { orderId: string; amount: number; keyId: string };

@@ -105,14 +105,11 @@ export async function fetchInternalStats(): Promise<InternalStats | null> {
 
 export type RecommendedJob = Job & { matchScore: number | null };
 
-export async function fetchRecommendedJobs(clerkId?: string) {
-  const headers: Record<string, string> = {};
-  if (clerkId) headers["X-Clerk-User-Id"] = clerkId;
+export async function fetchRecommendedJobs(token?: string | null) {
   try {
-    const res = await fetch(`${getApiUrl()}/api/jobs/recommended`, {
-      headers,
-      next: { revalidate: 300 },
-    });
+    const res = await fetch(`${getApiUrl()}/api/jobs/recommended`, token
+      ? { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+      : { next: { revalidate: 300 } });
     if (!res.ok) return null;
     const json = (await res.json()) as { success: boolean; data?: { jobs: RecommendedJob[]; personalized: boolean } };
     if (!json.success) return null;
@@ -131,10 +128,10 @@ type ApplicationWithJob = {
   job: { title: string; slug: string; salaryMin: number | null; salaryMax: number | null };
 };
 
-export async function fetchUserApplications(clerkId: string): Promise<{ applications: ApplicationWithJob[] } | null> {
+export async function fetchUserApplications(token: string | null): Promise<{ applications: ApplicationWithJob[] } | null> {
   try {
     const res = await fetch(`${process.env.API_URL}/api/applications`, {
-      headers: { "X-Clerk-User-Id": clerkId },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -197,9 +194,9 @@ export type ReferralData = {
   referrals: Array<{ status: string; createdAt: string; rewardPaise: number }>;
 };
 
-export async function fetchReferralCode(clerkId: string): Promise<ReferralData | null> {
+export async function fetchReferralCode(token: string | null): Promise<ReferralData | null> {
   const res = await fetch(`${getApiUrl()}/api/referral/code`, {
-    headers: { "X-Clerk-User-Id": clerkId },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   if (!res.ok) return null;
@@ -248,7 +245,7 @@ export async function fetchGigEarnings(slug: string): Promise<GigEarningsData | 
   return apiFetch<GigEarningsData>(`/api/gigs/${slug}/earnings`);
 }
 
-export async function fetchEmployerProfile(clerkId: string) {
+export async function fetchEmployerProfile(token: string | null) {
   return apiFetch<{
     id: string;
     companyName: string;
@@ -258,12 +255,12 @@ export async function fetchEmployerProfile(clerkId: string) {
     jobs: { id: string; title: string; slug: string; isActive: boolean; postedAt: string }[];
     subscription: { tier: string; expiresAt: string } | null;
   }>("/api/employer/me", {
-    headers: { "X-Clerk-User-Id": clerkId },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
 }
 
-export async function fetchTalentReport(clerkId: string) {
+export async function fetchTalentReport(token: string | null) {
   return apiFetch<{
     topSkills: { skill: string; count: number }[];
     salaryByRole: { roleSlug: string; role: string; _avg: { salaryUsd: number }; _count: { id: number } }[];
@@ -271,7 +268,7 @@ export async function fetchTalentReport(clerkId: string) {
     isSubscriber: boolean;
     generatedAt: string;
   }>("/api/employer/talent-report", {
-    headers: { "X-Clerk-User-Id": clerkId },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
 }

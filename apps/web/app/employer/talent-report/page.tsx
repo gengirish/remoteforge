@@ -12,12 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default async function TalentReportPage() {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) redirect("/employer/onboard");
 
+  const token = await getToken();
   const [employer, report] = await Promise.all([
-    fetchEmployerProfile(userId),
-    fetchTalentReport(userId),
+    fetchEmployerProfile(token),
+    fetchTalentReport(token),
   ]);
 
   if (!employer) redirect("/employer/onboard");

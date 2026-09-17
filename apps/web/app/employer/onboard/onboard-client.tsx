@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { getApiUrl } from "@/lib/api-url";
 import { isClerkEnabled } from "@/lib/clerk-config";
 
@@ -13,6 +13,7 @@ export default function OnboardClient() {
 
 function OnboardClientInner() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const router = useRouter();
   const [form, setForm] = useState({
     email: user?.primaryEmailAddress?.emailAddress ?? "",
@@ -33,7 +34,7 @@ function OnboardClientInner() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Clerk-User-Id": user.id,
+          Authorization: `Bearer ${await getToken()}`,
         },
         body: JSON.stringify(form),
       });

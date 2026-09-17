@@ -29,17 +29,17 @@ const STEPS = [
 ] as const;
 
 export default async function HomePage() {
-  let userId: string | undefined;
+  let token: string | null = null;
   try {
     const session = await auth();
-    userId = session.userId ?? undefined;
+    token = session.userId ? await session.getToken() : null;
   } catch {
     // Clerk not configured — skip personalization
   }
 
   const [homeData, recommended, report, inrRate] = await Promise.all([
     fetchHomeData(),
-    fetchRecommendedJobs(userId),
+    fetchRecommendedJobs(token),
     fetchIncomeReport(),
     fetchUsdToInrRate(),
   ]);

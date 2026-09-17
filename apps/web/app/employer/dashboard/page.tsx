@@ -6,10 +6,10 @@ import { fetchEmployerProfile } from "@/lib/data";
 export const dynamic = "force-dynamic";
 
 export default async function EmployerDashboardPage() {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) redirect("/employer/onboard");
 
-  const employer = await fetchEmployerProfile(userId);
+  const employer = await fetchEmployerProfile(await getToken());
   if (!employer) redirect("/employer/onboard");
 
   const isStarter = employer.subscriptionTier === "starter";

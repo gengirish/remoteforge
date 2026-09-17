@@ -48,15 +48,16 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   let userExperience = 0;
   try {
     if (isClerkEnabled) {
-      const { userId } = await auth();
+      const { userId, getToken } = await auth();
       if (userId) {
+        const token = await getToken();
         const [premiumRes, profileRes] = await Promise.all([
           fetch(`${process.env.API_URL}/api/premium/status`, {
-            headers: { "X-Clerk-User-Id": userId },
+            headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           }),
           fetch(`${process.env.API_URL}/api/user/profile`, {
-            headers: { "X-Clerk-User-Id": userId },
+            headers: { Authorization: `Bearer ${token}` },
             cache: "no-store",
           }),
         ]);

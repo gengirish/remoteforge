@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: Request) {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const premiumRes = await fetch(`${process.env.API_URL}/api/premium/status`, {
-    headers: { "X-Clerk-User-Id": userId },
+    headers: { Authorization: `Bearer ${await getToken()}` },
   });
   const premiumData = (await premiumRes.json()) as { data: { isPremium: boolean } };
   if (!premiumData.data?.isPremium) {

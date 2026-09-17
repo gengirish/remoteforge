@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server";
-import { Hono } from "hono";
+import { verifyToken } from "@clerk/backend";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import {
   handleAffiliateSettingsGet,
@@ -63,6 +64,24 @@ const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? "http://localhost:3000,https:/
   .split(",")
   .map((s) => s.trim());
 
+const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
+
+/**
+ * The signed-in user, taken from a verified Clerk session token in
+ * `Authorization: Bearer`. Never trust a client-supplied user id: without a
+ * valid token (or with CLERK_SECRET_KEY unset) the request is anonymous.
+ */
+async function clerkUserId(c: Context): Promise<string | undefined> {
+  const token = c.req.header("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token || !CLERK_SECRET_KEY) return undefined;
+  try {
+    const payload = await verifyToken(token, { secretKey: CLERK_SECRET_KEY });
+    return payload.sub;
+  } catch {
+    return undefined;
+  }
+}
+
 const app = new Hono();
 
 app.use(
@@ -73,7 +92,7 @@ app.use(
       return CORS_ORIGINS.includes(origin) ? origin : CORS_ORIGINS[0] ?? origin;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret", "X-Clerk-User-Id"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Internal-Key", "X-Cron-Secret"],
   }),
 );
 
@@ -110,7 +129,7 @@ app.get("/api/jobs", async (c) => {
 });
 
 app.get("/api/jobs/recommended", async (c) => {
-  const { status, body } = await handleRecommendedJobs(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleRecommendedJobs(await clerkUserId(c));
   return c.json(body, status);
 });
 
@@ -265,25 +284,25 @@ app.patch("/api/internal/gig-platforms/:id/affiliate", async (c) => {
 });
 
 app.get("/api/user/profile", async (c) => {
-  const { status, body } = await handleGetProfile(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleGetProfile(await clerkUserId(c));
   return c.json(body, status);
 });
 
 app.post("/api/user/profile", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handleUpsertProfile(body, c.req.header("X-Clerk-User-Id"));
+  const { status, body: res } = await handleUpsertProfile(body, await clerkUserId(c));
   return c.json(res, status);
 });
 
 app.get("/api/user/saved-jobs", async (c) => {
-  const { status, body } = await handleGetSavedJobs(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleGetSavedJobs(await clerkUserId(c));
   return c.json(body, status);
 });
 
 app.post("/api/user/saved-jobs", async (c) => {
   const body = await c.req.json().catch(() => null);
   const { status, body: res } = await handleToggleSavedJob(
-    c.req.header("X-Clerk-User-Id"),
+    await clerkUserId(c),
     body?.jobId,
   );
   return c.json(res, status);
@@ -291,12 +310,12 @@ app.post("/api/user/saved-jobs", async (c) => {
 
 app.post("/api/applications", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handleUpsertApplication(body, c.req.header("X-Clerk-User-Id"));
+  const { status, body: res } = await handleUpsertApplication(body, await clerkUserId(c));
   return c.json(res, status);
 });
 
 app.get("/api/applications", async (c) => {
-  const { status, body } = await handleGetApplications(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleGetApplications(await clerkUserId(c));
   return c.json(body, status);
 });
 
@@ -323,7 +342,7 @@ app.get("/api/salary/:roleSlug", async (c) => {
 });
 
 app.get("/api/referral/code", async (c) => {
-  const { status, body } = await handleGetReferralCode(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleGetReferralCode(await clerkUserId(c));
   return c.json(body, status);
 });
 
@@ -335,12 +354,12 @@ app.post("/api/referral/click", async (c) => {
 
 app.post("/api/referral/signup", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handleReferralSignup(body, c.req.header("X-Clerk-User-Id"));
+  const { status, body: res } = await handleReferralSignup(body, await clerkUserId(c));
   return c.json(res, status);
 });
 
 app.post("/api/referral/convert", async (c) => {
-  const { status, body } = await handleReferralConvert(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleReferralConvert(await clerkUserId(c));
   return c.json(body, status);
 });
 
@@ -351,7 +370,7 @@ app.get("/api/community/wins", async (c) => {
 
 app.post("/api/community/wins", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handleSubmitSuccessStory(body, c.req.header("X-Clerk-User-Id"));
+  const { status, body: res } = await handleSubmitSuccessStory(body, await clerkUserId(c));
   return c.json(res, status);
 });
 
@@ -369,38 +388,38 @@ app.get("/api/employer/by-slug/:slug", async (c) => {
 
 app.post("/api/employer/onboard", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handleEmployerOnboard(body, c.req.header("X-Clerk-User-Id"));
+  const { status, body: res } = await handleEmployerOnboard(body, await clerkUserId(c));
   return c.json(res, status);
 });
 
 app.get("/api/employer/me", async (c) => {
-  const { status, body } = await handleGetEmployer(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleGetEmployer(await clerkUserId(c));
   return c.json(body, status);
 });
 
 app.post("/api/employer/jobs", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handlePostDirectJob(body, c.req.header("X-Clerk-User-Id"));
+  const { status, body: res } = await handlePostDirectJob(body, await clerkUserId(c));
   return c.json(res, status);
 });
 
 app.get("/api/employer/talent-report", async (c) => {
-  const { status, body } = await handleTalentReport(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleTalentReport(await clerkUserId(c));
   return c.json(body, status);
 });
 
 app.post("/api/employer/subscription", async (c) => {
-  const { status, body } = await handleEmployerSubscription(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handleEmployerSubscription(await clerkUserId(c));
   return c.json(body, status);
 });
 
 app.get("/api/premium/status", async (c) => {
-  const { status, body } = await handlePremiumStatus(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handlePremiumStatus(await clerkUserId(c));
   return c.json(body, status);
 });
 
 app.post("/api/premium/checkout", async (c) => {
-  const { status, body } = await handlePremiumCheckout(c.req.header("X-Clerk-User-Id"));
+  const { status, body } = await handlePremiumCheckout(await clerkUserId(c));
   return c.json(body, status);
 });
 

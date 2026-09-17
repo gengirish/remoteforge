@@ -64,7 +64,7 @@ function ProfileClientInner() {
   const fetchProfile = useCallback(async () => {
     if (!userId) return;
     const res = await fetch(`${apiBase}/api/user/profile`, {
-      headers: { "X-Clerk-User-Id": userId },
+      headers: { Authorization: `Bearer ${await getToken()}` },
     });
     if (res.ok) {
       const json = await res.json();
@@ -78,18 +78,18 @@ function ProfileClientInner() {
         yearsExperience: p.yearsExperience?.toString() ?? "",
       });
     }
-  }, [userId, apiBase]);
+  }, [userId, apiBase, getToken]);
 
   const fetchSavedJobs = useCallback(async () => {
     if (!userId) return;
     const res = await fetch(`${apiBase}/api/user/saved-jobs`, {
-      headers: { "X-Clerk-User-Id": userId },
+      headers: { Authorization: `Bearer ${await getToken()}` },
     });
     if (res.ok) {
       const json = await res.json();
       setSavedJobs(json.data?.jobs ?? []);
     }
-  }, [userId, apiBase]);
+  }, [userId, apiBase, getToken]);
 
   useEffect(() => {
     if (isLoaded && userId) {
@@ -106,7 +106,7 @@ function ProfileClientInner() {
     try {
       const res = await fetch(`${apiBase}/api/user/profile`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Clerk-User-Id": userId },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getToken()}` },
         body: JSON.stringify({
           email: user.primaryEmailAddress?.emailAddress ?? "",
           displayName: form.displayName || undefined,
@@ -134,7 +134,7 @@ function ProfileClientInner() {
     if (!userId) return;
     await fetch(`${apiBase}/api/user/saved-jobs`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Clerk-User-Id": userId },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getToken()}` },
       body: JSON.stringify({ jobId }),
     });
     setSavedJobs((prev) => prev.filter((j) => j.id !== jobId));

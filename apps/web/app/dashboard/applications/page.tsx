@@ -15,10 +15,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default async function ApplicationsPage() {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) redirect("/sign-in");
 
-  const data = await fetchUserApplications(userId);
+  const data = await fetchUserApplications(await getToken());
   const applications = data?.applications ?? [];
 
   return (
