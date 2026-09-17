@@ -18,7 +18,7 @@ pnpm lint                     # tsc --noEmit across all workspaces — the only 
 pnpm build                    # turbo build
 pnpm ingest                   # run job ingestion locally against .env
 
-pnpm deploy:api               # Fly.io (bom), --ha=false, single machine
+pnpm deploy:api               # Fly.io (sin), --ha=false, single machine
 pnpm deploy:web               # Vercel
 ```
 
@@ -31,7 +31,7 @@ Single workspace: `pnpm --filter api lint`, `pnpm --filter web build`, etc.
 Split deploy: **Vercel hosts a thin UI, Fly hosts all business logic, Neon holds the data.**
 
 ```
-apps/web (Vercel)  ──HTTPS──▶  apps/api (Fly.io bom)  ──▶  Neon Postgres
+apps/web (Vercel)  ──HTTPS──▶  apps/api (Fly.io sin)  ──▶  Neon Postgres
 GitHub Actions cron ───────────▶ /api/jobs/ingest (6h), /api/cron/digest (Mon)
 ```
 
