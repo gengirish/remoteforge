@@ -51,9 +51,7 @@ async function sendEmail(
   if (!inboxId) return { ok: false, error: "AGENTMAIL_INBOX_ID not configured" };
 
   try {
-    const body = unsubscribeUrl ? `${text}
-
-Unsubscribe: ${unsubscribeUrl}` : text;
+    const body = unsubscribeUrl ? `${text}\n\nUnsubscribe: ${unsubscribeUrl}` : text;
     // RFC 8058 one-click: Gmail/Yahoo POST to the URL directly from their UI.
     const headers = unsubscribeUrl
       ? { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
@@ -82,6 +80,7 @@ export async function sendJobDigestEmail(
     to,
     `${jobs.length} new remote jobs for you`,
     `Your weekly remote job digest:\n\n${jobList}\n\n— RemoteForge`,
+    unsubscribeUrl,
   );
 }
 
@@ -96,5 +95,6 @@ export async function sendGigDigestEmail(
     to,
     `${gigs.length} AI gig platforms worth checking`,
     `Your weekly AI gig digest:\n\n${gigList}\n\n— RemoteForge`,
+    unsubscribeUrl,
   );
 }
