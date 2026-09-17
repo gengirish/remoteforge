@@ -12,24 +12,24 @@ Other sessions commit to `master` concurrently: `git pull` before starting a tas
 
 Ingestion upserts but never deactivates, so listings gone from the source feeds stay `isActive: true` forever.
 
-- [ ] At the end of each source's ingest in `packages/ingestion`, set `isActive = false` for that `sourceBoard`'s jobs whose `updatedAt` is older than N days (start with 14)
-- [ ] Only deactivate a source if its fetch succeeded, so a feed outage doesn't wipe that source
-- [ ] Runs inside the existing 6h cron; **no new timer**
-- [ ] Verify: run the Cron workflow once (`gh workflow run cron.yml`), then check the active count drops and every active job has a recent `updatedAt`
+- [x] At the end of each source's ingest in `packages/ingestion`, set `isActive = false` for stale jobs (`f5d42b5`). As built: `postedAt` > `JOB_MAX_AGE_DAYS` (30) **and** `lastSeenAt` > `JOB_STALE_DAYS` (3); featured jobs never expire
+- [x] Only deactivate a source if its fetch succeeded, so a feed outage doesn't wipe that source (skips when the fetch throws or returns 0 jobs)
+- [x] Runs inside the existing 6h cron; **no new timer**
+- [ ] Verify after 2026-09-20: active count drops. On 2026-09-17, 421/421 active, no null `lastSeenAt` (column default backfilled), 221 jobs are >30 days old and missing from the latest run, so they should expire on the first run 3 days after they were last seen
 
 ## 2. Bot filtering on `/go`
 
-- [ ] In the `/go/:id` handler (`packages/api-core/src/handlers.ts`), skip writing `JobClick`/`GigClick` for known crawler user agents (bot, crawl, spider, preview fetchers, headless). Still redirect them.
-- [ ] Skip repeat clicks from the same `ipHash` on the same target within a short window (e.g. 10 min)
-- [ ] Record `userAgent` on `GigClick` too, as `JobClick` already does. The schema change goes through `pnpm db:push`
+- [x] In the `/go/:id` handler, flag crawler user agents (`packages/api-core/src/bot-filter.ts`, `f5d42b5`). As built: rows are kept with `isBot = true` rather than skipped, so **filter `isBot = false` in every metric query**. Crawlers still get redirected
+- [x] Skip repeat clicks from the same `ipHash` on the same target within `REPEAT_CLICK_WINDOW_MS`
+- [x] Record `userAgent` on `GigClick` too; columns confirmed in prod 2026-09-17
 - [ ] Verify: `curl -A "Googlebot"` the redirect → 302 and no new row; a browser click → one row
 
 ## 3. Real signup test
 
-- [ ] Homepage approval-alerts form → row with `source = "home-approval-alerts"`, `wantsGigAlerts = true`
-- [ ] Homepage prep waitlist form → row with `source = "prep-waitlist"`
-- [ ] WhatsApp number typed as `+91 98765 43210` is accepted
-- [ ] Delete the test rows afterwards
+- [x] Homepage approval-alerts payload → row with `source = "home-approval-alerts"`, `wantsGigAlerts = true` (live API, 2026-09-17)
+- [x] Homepage prep waitlist payload → row with `source = "prep-waitlist"`; an existing subscriber joining the waitlist is switched to `prep-waitlist` (2026-09-17)
+- [~] WhatsApp number: API accepts `+919876543210` and stores it; the in-browser normalization of `+91 98765 43210` is not yet clicked through
+- [x] Delete the test rows afterwards (2 `rf-signup-test-*` rows deleted)
 
 ## 4. Gig detail pages: Outlier → Mercor → Alignerr
 
