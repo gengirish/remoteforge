@@ -33,6 +33,7 @@ model Job {
   visaSponsorship   Boolean?
   postedAt      DateTime
   expiresAt     DateTime?
+  lastSeenAt    DateTime  @default(now())
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   clicks        JobClick[]
@@ -44,6 +45,7 @@ model Job {
   @@index([category, isActive])
   @@index([postedAt(sort: Desc)])
   @@index([isFeatured, isActive])
+  @@index([sourceBoard, isActive, lastSeenAt])
 }
 
 model JobClick {
@@ -57,10 +59,13 @@ model JobClick {
   userAgent   String?
   referrer    String?
   converted   Boolean  @default(false)
+  isBot       Boolean  @default(false)
+  isDuplicate Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   @@index([jobId])
   @@index([createdAt(sort: Desc)])
+  @@index([jobId, ipHash, createdAt])
 }
 
 model GigPlatform {
@@ -103,11 +108,15 @@ model GigClick {
   clickType  String
   utmSource  String?
   utmMedium  String?
-  ipHash     String?
-  createdAt  DateTime    @default(now())
+  ipHash      String?
+  userAgent   String?
+  isBot       Boolean     @default(false)
+  isDuplicate Boolean     @default(false)
+  createdAt   DateTime    @default(now())
 
   @@index([platformId])
   @@index([createdAt(sort: Desc)])
+  @@index([platformId, ipHash, createdAt])
 }
 
 model Subscriber {
@@ -120,6 +129,7 @@ model Subscriber {
   wantsGigAlerts Boolean  @default(false)
   frequency      String   @default("weekly")
   source         String   @default("web")
+  signals        String[]
   isVerified     Boolean  @default(false)
   createdAt      DateTime @default(now())
 }

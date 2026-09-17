@@ -69,7 +69,7 @@ Prisma against Neon (pooled `-pooler` host, `sslmode=require`), 26 models, singl
 
 ### Email
 
-`packages/job-alerts/src/email.ts` sends through **AgentMail** (`agentmail` SDK), not Resend. It reads `AGENTMAIL_API_KEY` and `AGENTMAIL_INBOX_ID` (`alerts@intelliforge.tech`, shared with other IntelliForge apps) and never throws: a missing key or API error comes back as `{ ok: false, error }`. `handleDigest` still returns 200 when every send fails, so check `emailsAttempted` and `errors` in its body. Links use `NEXT_PUBLIC_APP_URL`, falling back to `https://remoteforge.intelliforge.tech`; `remoteforge.in` does not resolve. Setup and testing are in `DEPLOY.md`.
+`packages/job-alerts/src/email.ts` sends through **AgentMail** (`agentmail` SDK), not Resend. It reads `AGENTMAIL_API_KEY` and `AGENTMAIL_INBOX_ID` (`alerts@intelliforge.tech`, shared with other IntelliForge apps) and never throws: a missing key or API error comes back as `{ ok: false, error }`. `handleDigest` still returns 200 when every send fails, so check `emailsSent` and `errors` in its body. `?to=<email>` restricts a run to one address for testing. Digests carry HMAC-signed unsubscribe links (`UNSUBSCRIBE_SECRET`, falling back to `CRON_SECRET`); `GET /api/unsubscribe` must stay side-effect free because mail scanners fetch it, and only POST deletes the subscriber. Links use `NEXT_PUBLIC_APP_URL`, falling back to `https://remoteforge.intelliforge.tech`; `remoteforge.in` does not resolve. Setup and testing are in `DEPLOY.md`.
 
 USD→INR conversion syncs daily from Frankfurter into the `ExchangeRate` model (`packages/db/src/exchange-rate.ts`); `USD_TO_INR_RATE` in env is only a fallback.
 

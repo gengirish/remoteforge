@@ -4,6 +4,8 @@ export {
   handleCompaniesIndia,
   handleCompanyStats,
   handleDigest,
+  handleUnsubscribe,
+  handleUnsubscribePage,
   handleAffiliateSettingsGet,
   handleAffiliateSettingsUpdate,
   handleFeaturedCreateOrder,

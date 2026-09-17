@@ -10,6 +10,8 @@ import {
   handleGetCompanyBySlug,
   handleCreateApiKey,
   handleDigest,
+  handleUnsubscribe,
+  handleUnsubscribePage,
   handleFeaturedCreateOrder,
   handleGigAffiliateUpdate,
   handleGetApplications,
@@ -197,8 +199,19 @@ app.get("/api/cron/digest", async (c) => {
   const { status, body } = await handleDigest(
     c.req.header("Authorization"),
     c.req.header("X-Cron-Secret"),
+    c.req.query("to"),
   );
   return c.json(body, status);
+});
+
+app.get("/api/unsubscribe", (c) => {
+  const { status, body } = handleUnsubscribePage(c.req.query("e"), c.req.query("t"));
+  return c.html(body, status);
+});
+
+app.post("/api/unsubscribe", async (c) => {
+  const { status, body } = await handleUnsubscribe(c.req.query("e"), c.req.query("t"));
+  return c.html(body, status);
 });
 
 app.post("/api/featured/create-order", async (c) => {
@@ -225,7 +238,8 @@ app.get("/go/:id", async (c) => {
     utm_campaign: c.req.query("utm_campaign"),
   };
   const result = await handleGoRedirect(c.req.param("id"), query, {
-    ip: c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
+    // Fly sets fly-client-ip to the real client; x-forwarded-for is a fallback.
+    ip: c.req.header("fly-client-ip")?.trim() || c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
     userAgent: c.req.header("user-agent"),
     referrer: c.req.header("referer"),
   });

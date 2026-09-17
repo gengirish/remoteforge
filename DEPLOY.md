@@ -219,13 +219,18 @@ Set a key from your own shell, not a chat or a committed file.
 
    A `message_id` in the response means AgentMail accepted the message. Check the inbox and the spam folder.
 
-3. **Digest end to end.** This emails **every** `Subscriber` row, and there is no unsubscribe link yet. The response body shows the outcome:
+3. **Digest end to end, to one address.** `?to=` sends the real digest to that address only; it need not be a subscriber. Without `?to=`, the route emails **every** `Subscriber` row.
 
-   ```json
-   {"success":true,"data":{"subscribers":12,"emailsAttempted":12,"errors":[]}}
+   ```bash
+   curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
+     "https://remoteforge-api.fly.dev/api/cron/digest?to=you@example.com"
    ```
 
-   The route returns 200 even when every send fails, so a green Cron run is not proof. `emailsAttempted` counts successful sends; `errors` holds up to five failures:
+   ```json
+   {"success":true,"data":{"mode":"test","subscribers":1,"emailsSent":2,"errors":[]}}
+   ```
+
+   A test recipient gets both the job and gig emails, so `emailsSent` is 2. The route returns 200 even when every send fails, so a green Cron run is not proof. `emailsSent` counts successful sends; `errors` holds up to five failures:
 
    | `errors` entry | Cause |
    |----------------|-------|
@@ -233,6 +238,17 @@ Set a key from your own shell, not a chat or a committed file.
    | `AGENTMAIL_INBOX_ID not configured` | secret missing on Fly |
    | `AgentMail API error 401/403: ...` | key revoked, or from another org |
    | `AgentMail API error 404: ...` | inbox id wrong |
+
+### Unsubscribe
+
+Every digest carries an unsubscribe link, both in the body and as `List-Unsubscribe` plus `List-Unsubscribe-Post` headers, so Gmail and Yahoo show their one-click button. The link is `GET /api/unsubscribe?e=<email>&t=<hmac>`. GET only renders a confirm button, because mail scanners fetch every URL. The POST from that button, or from a mail client's one-click, deletes the `Subscriber` row.
+
+| Fly secret | Default | Notes |
+|------------|---------|-------|
+| `UNSUBSCRIBE_SECRET` | falls back to `CRON_SECRET` | HMAC key for the links. Set it so that rotating `CRON_SECRET` doesn't break links already sent; changing it invalidates every sent link |
+| `API_PUBLIC_URL` | `https://remoteforge-api.fly.dev` | base URL the links point at |
+
+If neither secret is set, emails go out with no unsubscribe link.
 
 ### Rotating the key
 

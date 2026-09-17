@@ -38,7 +38,12 @@ function describeError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-async function sendEmail(to: string, subject: string, text: string): Promise<SendResult> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  text: string,
+  unsubscribeUrl?: string,
+): Promise<SendResult> {
   const am = getClient();
   if (!am) return { ok: false, error: "AGENTMAIL_API_KEY not configured" };
 
@@ -46,7 +51,14 @@ async function sendEmail(to: string, subject: string, text: string): Promise<Sen
   if (!inboxId) return { ok: false, error: "AGENTMAIL_INBOX_ID not configured" };
 
   try {
-    await am.inboxes.messages.send(inboxId, { to, subject, text });
+    const body = unsubscribeUrl ? `${text}
+
+Unsubscribe: ${unsubscribeUrl}` : text;
+    // RFC 8058 one-click: Gmail/Yahoo POST to the URL directly from their UI.
+    const headers = unsubscribeUrl
+      ? { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+      : undefined;
+    await am.inboxes.messages.send(inboxId, { to, subject, text: body, headers });
     return { ok: true };
   } catch (err) {
     return { ok: false, error: describeError(err) };
@@ -57,7 +69,11 @@ function appUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://remoteforge.intelliforge.tech";
 }
 
-export async function sendJobDigestEmail(to: string, jobs: DigestJob[]): Promise<SendResult> {
+export async function sendJobDigestEmail(
+  to: string,
+  jobs: DigestJob[],
+  unsubscribeUrl?: string,
+): Promise<SendResult> {
   const jobList = jobs
     .map((j) => `• ${j.title} at ${j.company} — ${appUrl()}/jobs/${j.slug}`)
     .join("\n");
@@ -69,7 +85,11 @@ export async function sendJobDigestEmail(to: string, jobs: DigestJob[]): Promise
   );
 }
 
-export async function sendGigDigestEmail(to: string, gigs: DigestGig[]): Promise<SendResult> {
+export async function sendGigDigestEmail(
+  to: string,
+  gigs: DigestGig[],
+  unsubscribeUrl?: string,
+): Promise<SendResult> {
   const gigList = gigs.map((g) => `• ${g.name} — ${appUrl()}/ai-gigs/${g.slug}`).join("\n");
 
   return sendEmail(

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { loadAffiliateSettings } from "@intelliforge/db";
 import { getAffiliateSettingsForAdmin } from "./affiliate-config";
 import { getRedirectTarget } from "./affiliate";
+import { REPEAT_CLICK_WINDOW_MS, isBotUserAgent } from "./bot-filter";
 import { authorizeCron } from "./cron-auth";
 import { computeMatchScore } from "./match-score";
 import { fail, ok } from "./response";
@@ -38,7 +39,13 @@ export async function handleHealthDeep() {
         prisma.job.count({ where: { isActive: true } }),
         prisma.gigPlatform.count({ where: { isActive: true } }),
         prisma.subscriber.count(),
-        prisma.jobClick.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+        prisma.jobClick.count({
+          where: {
+            isBot: false,
+            isDuplicate: false,
+            createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          },
+        }),
       ]);
       deepHealthCache = { at: Date.now(), jobs, gigs, subscriberCount, weeklyClicks };
     }
@@ -143,10 +150,15 @@ export async function handleJobsGet(
   };
 }
 
+// Detail lookup deliberately includes inactive (expired) jobs so old URLs
+// render an "no longer accepting applications" page instead of 404ing.
+// Listings, slugs and the sitemap still filter isActive: true.
 export async function handleJobBySlug(slug: string, full = false) {
   const job = await prisma.job.findFirst({
-    where: { slug, isActive: true },
-    ...(full ? {} : { select: { title: true, company: true, description: true, tags: true, category: true } }),
+    where: { slug },
+    ...(full
+      ? {}
+      : { select: { title: true, company: true, description: true, tags: true, category: true, isActive: true } }),
   });
   if (!job) return { status: 404 as const, body: fail("Job not found") };
   return { status: 200 as const, body: ok(job) };
@@ -194,17 +206,24 @@ const subscribeSchema = z.object({
   gigTypes: z.array(z.string()).default([]),
   frequency: z.enum(["daily", "weekly"]).default("weekly"),
   source: z.string().max(40).optional(),
+  // Per-platform intent, e.g. "approval-alert:mercor" or "prep-waitlist:outlier-ai".
+  signal: z
+    .string()
+    .max(80)
+    .regex(/^(approval-alert|prep-waitlist):[a-z0-9-]+$/)
+    .optional(),
 });
 
 export async function handleSubscribe(body: unknown) {
   const parsed = subscribeSchema.safeParse(body);
   if (!parsed.success) return { status: 400 as const, body: fail("Enter a valid email and a WhatsApp number like +919876543210") };
 
-  // wantsJobAlerts is not a Subscriber column; passing it through made every create throw.
-  const { wantsJobAlerts: _wantsJobAlerts, ...data } = parsed.data;
+  // wantsJobAlerts and signal are not Subscriber columns; passing them through made every create throw.
+  const { wantsJobAlerts: _wantsJobAlerts, signal, ...data } = parsed.data;
+  const isPrepWaitlist = data.source === "prep-waitlist" || signal?.startsWith("prep-waitlist:") === true;
   const subscriber = await prisma.subscriber.upsert({
     where: { email: data.email },
-    create: data,
+    create: { ...data, signals: signal ? [signal] : [] },
     update: {
       phone: data.phone,
       jobCategories: data.jobCategories,
@@ -213,9 +232,18 @@ export async function handleSubscribe(body: unknown) {
       wantsGigAlerts: data.wantsGigAlerts,
       frequency: data.frequency,
       // Keep the first-touch source, but never lose a prep-waitlist signal from an existing subscriber.
-      ...(data.source === "prep-waitlist" ? { source: data.source } : {}),
+      ...(isPrepWaitlist ? { source: "prep-waitlist" } : {}),
     },
   });
+
+  if (signal) {
+    // One conditional UPDATE: Postgres re-checks the WHERE under the row lock, so
+    // concurrent submits can't append the same signal twice. No-op right after a create.
+    await prisma.subscriber.updateMany({
+      where: { email: data.email, NOT: { signals: { has: signal } } },
+      data: { signals: { push: signal } },
+    });
+  }
 
   return { status: 200 as const, body: ok({ id: subscriber.id, email: subscriber.email }) };
 }
@@ -245,12 +273,49 @@ export async function handleIngest(authHeader: string | undefined, cronSecretHea
   return { status: 200 as const, body: ok({ mode: "inline", total, results }) };
 }
 
-export async function handleDigest(authHeader: string | undefined, cronSecretHeader: string | undefined) {
+// Unsubscribe links are stateless: an HMAC of the email, so no token column is
+// needed. Prefer a dedicated secret so rotating CRON_SECRET doesn't break
+// every link already sitting in an inbox.
+function unsubscribeSecret(): string | undefined {
+  return process.env.UNSUBSCRIBE_SECRET?.trim() || process.env.CRON_SECRET?.trim() || undefined;
+}
+
+function unsubscribeToken(email: string, secret: string): string {
+  return createHmac("sha256", secret).update(`unsubscribe:${email.toLowerCase()}`).digest("hex");
+}
+
+function unsubscribeUrl(email: string): string | undefined {
+  const secret = unsubscribeSecret();
+  if (!secret) return undefined;
+  const base = (process.env.API_PUBLIC_URL?.trim() || "https://remoteforge-api.fly.dev").replace(/\/$/, "");
+  const params = new URLSearchParams({ e: email, t: unsubscribeToken(email, secret) });
+  return `${base}/api/unsubscribe?${params}`;
+}
+
+const emailSchema = z.string().trim().email();
+
+/**
+ * `to` restricts the run to that single address (it need not be a subscriber),
+ * so the digest can be tested without emailing the whole Subscriber table.
+ */
+export async function handleDigest(
+  authHeader: string | undefined,
+  cronSecretHeader: string | undefined,
+  to?: string,
+) {
   if (!authorizeCron(authHeader, cronSecretHeader, process.env.CRON_SECRET)) {
     return { status: 401 as const, body: fail("Unauthorized") };
   }
 
-  const subscribers = await prisma.subscriber.findMany();
+  let recipients: { email: string; wantsGigAlerts: boolean }[];
+  if (to !== undefined) {
+    const parsed = emailSchema.safeParse(to);
+    if (!parsed.success) return { status: 400 as const, body: fail("Invalid 'to' address") };
+    recipients = [{ email: parsed.data, wantsGigAlerts: true }];
+  } else {
+    recipients = await prisma.subscriber.findMany({ select: { email: true, wantsGigAlerts: true } });
+  }
+
   const [recentJobs, gigPlatforms] = await Promise.all([
     prisma.job.findMany({
       where: { isActive: true, indiaFriendly: true },
@@ -268,20 +333,83 @@ export async function handleDigest(authHeader: string | undefined, cronSecretHea
 
   let sent = 0;
   const errors: string[] = [];
-  for (const sub of subscribers) {
+  for (const sub of recipients) {
+    const unsubscribe = unsubscribeUrl(sub.email);
     if (recentJobs.length > 0) {
-      const result = await sendJobDigestEmail(sub.email, recentJobs);
+      const result = await sendJobDigestEmail(sub.email, recentJobs, unsubscribe);
       if (result.ok) sent++;
       else if (result.error) errors.push(result.error);
     }
     if (sub.wantsGigAlerts && gigPlatforms.length > 0) {
-      const result = await sendGigDigestEmail(sub.email, gigPlatforms);
+      const result = await sendGigDigestEmail(sub.email, gigPlatforms, unsubscribe);
       if (result.ok) sent++;
       else if (result.error) errors.push(result.error);
     }
   }
 
-  return { status: 200 as const, body: ok({ subscribers: subscribers.length, emailsAttempted: sent, errors: errors.slice(0, 5) }) };
+  return {
+    status: 200 as const,
+    body: ok({
+      mode: to !== undefined ? "test" : "all",
+      subscribers: recipients.length,
+      emailsSent: sent,
+      errors: errors.slice(0, 5),
+    }),
+  };
+}
+
+function unsubscribePage(title: string, message: string, form?: { email: string; token: string }): string {
+  const esc = (v: string) =>
+    v.replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+  const formHtml = form
+    ? `<form method="post" action="/api/unsubscribe?e=${encodeURIComponent(form.email)}&t=${form.token}">
+<button type="submit">Unsubscribe ${esc(form.email)}</button></form>`
+    : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>${esc(title)} · RemoteForge</title>
+<style>body{font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;color:#111}
+button{font:inherit;padding:.6rem 1rem;border:0;border-radius:.4rem;background:#111;color:#fff;cursor:pointer}</style>
+</head><body><h1>${esc(title)}</h1><p>${esc(message)}</p>${formHtml}</body></html>`;
+}
+
+function verifyUnsubscribe(email: string | undefined, token: string | undefined): string | null {
+  const secret = unsubscribeSecret();
+  if (!email || !token || !secret) return null;
+  const expected = Buffer.from(unsubscribeToken(email, secret));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given) ? email : null;
+}
+
+/**
+ * GET only renders a confirm button: mail scanners and link previewers fetch
+ * every URL in a message, so a GET that deleted would silently unsubscribe people.
+ */
+export function handleUnsubscribePage(email: string | undefined, token: string | undefined) {
+  const verified = verifyUnsubscribe(email, token);
+  if (!verified) {
+    return { status: 400 as const, body: unsubscribePage("Invalid link", "This unsubscribe link is invalid or incomplete.") };
+  }
+  return {
+    status: 200 as const,
+    body: unsubscribePage("Unsubscribe", "Stop receiving the RemoteForge weekly digest?", {
+      email: verified,
+      token: token!,
+    }),
+  };
+}
+
+// Handles both the confirm form and RFC 8058 one-click POSTs from mail clients.
+export async function handleUnsubscribe(email: string | undefined, token: string | undefined) {
+  const verified = verifyUnsubscribe(email, token);
+  if (!verified) {
+    return { status: 400 as const, body: unsubscribePage("Invalid link", "This unsubscribe link is invalid or incomplete.") };
+  }
+  await prisma.subscriber.deleteMany({ where: { email: { equals: verified, mode: "insensitive" } } });
+  return {
+    status: 200 as const,
+    body: unsubscribePage("Unsubscribed", "You won't receive the RemoteForge digest any more."),
+  };
 }
 
 const featuredSchema = z.object({ jobId: z.string().min(1) });
@@ -463,8 +591,13 @@ export async function handleGoRedirect(
 ) {
   const type = query.type ?? "job";
   const clickType = query.clickType ?? "apply";
-  const ipHash = hashIp(headers.ip ?? "unknown");
+  const ip = headers.ip?.trim();
+  const ipHash = hashIp(ip || "unknown");
+  // Missing IP hashes to a shared "unknown" value, so it can't be deduped.
+  const dedupable = Boolean(ip);
+  const isBot = isBotUserAgent(headers.userAgent);
   const affiliateSettings = await loadAffiliateSettings();
+  const windowStart = () => new Date(Date.now() - REPEAT_CLICK_WINDOW_MS);
 
   let targetUrl: string;
 
@@ -472,23 +605,41 @@ export async function handleGoRedirect(
     const platform = await prisma.gigPlatform.findUnique({ where: { id } });
     if (!platform) return { status: 404 as const, body: fail("Not found"), redirect: null };
     targetUrl = getRedirectTarget("gig", platform, clickType as "apply" | "referral" | "guide", affiliateSettings);
-    prisma.gigClick
-      .create({
+    // Fire-and-forget: the duplicate lookup and insert never delay the redirect.
+    void (async () => {
+      const isDuplicate =
+        !isBot && dedupable
+          ? (await prisma.gigClick.findFirst({
+              where: { platformId: platform.id, ipHash, createdAt: { gte: windowStart() } },
+              select: { id: true },
+            })) !== null
+          : false;
+      await prisma.gigClick.create({
         data: {
           platformId: platform.id,
           clickType,
           utmSource: query.utm_source,
           utmMedium: query.utm_medium,
           ipHash,
+          userAgent: headers.userAgent,
+          isBot,
+          isDuplicate,
         },
-      })
-      .catch(console.error);
+      });
+    })().catch(console.error);
   } else {
     const job = await prisma.job.findUnique({ where: { id } });
     if (!job) return { status: 404 as const, body: fail("Not found"), redirect: null };
     targetUrl = getRedirectTarget("job", job, "apply", affiliateSettings);
-    prisma.jobClick
-      .create({
+    void (async () => {
+      const isDuplicate =
+        !isBot && dedupable
+          ? (await prisma.jobClick.findFirst({
+              where: { jobId: job.id, ipHash, createdAt: { gte: windowStart() } },
+              select: { id: true },
+            })) !== null
+          : false;
+      await prisma.jobClick.create({
         data: {
           jobId: job.id,
           utmSource: query.utm_source,
@@ -497,9 +648,11 @@ export async function handleGoRedirect(
           ipHash,
           userAgent: headers.userAgent,
           referrer: headers.referrer,
+          isBot,
+          isDuplicate,
         },
-      })
-      .catch(console.error);
+      });
+    })().catch(console.error);
   }
 
   return { status: 302 as const, body: null, redirect: targetUrl };
@@ -531,6 +684,9 @@ export async function handleInternalStats(internalKey: string | undefined, confi
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  // Human, first-in-window clicks only; bot and repeat clicks are kept for audit.
+  const clean = { isBot: false, isDuplicate: false } as const;
+  const clean7d = { ...clean, createdAt: { gte: sevenDaysAgo } };
 
   const [
     totalJobClicks,
@@ -541,24 +697,52 @@ export async function handleInternalStats(internalKey: string | undefined, confi
     featuredSlots,
     topJobs,
     topGigPlatforms,
+    uniqueJobIps7d,
+    uniqueGigIps7d,
+    botJobClicks7d,
+    botGigClicks7d,
   ] = await Promise.all([
-    prisma.jobClick.count(),
-    prisma.gigClick.count(),
-    prisma.jobClick.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-    prisma.gigClick.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.jobClick.count({ where: clean }),
+    prisma.gigClick.count({ where: clean }),
+    prisma.jobClick.count({ where: clean7d }),
+    prisma.gigClick.count({ where: clean7d }),
     prisma.subscriber.count(),
     prisma.featuredSlot.findMany({
       where: { expiresAt: { gte: now } },
       include: { job: { select: { title: true, company: true } } },
     }),
-    prisma.jobClick.groupBy({ by: ["jobId"], _count: { id: true }, orderBy: { _count: { id: "desc" } }, take: 10 }),
-    prisma.gigClick.groupBy({ by: ["platformId"], _count: { id: true }, orderBy: { _count: { id: "desc" } }, take: 5 }),
+    prisma.jobClick.groupBy({
+      by: ["jobId"],
+      where: clean,
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+      take: 10,
+    }),
+    prisma.gigClick.groupBy({
+      by: ["platformId"],
+      where: clean,
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+      take: 5,
+    }),
+    prisma.jobClick.groupBy({ by: ["ipHash"], where: { ...clean7d, ipHash: { not: null } } }),
+    prisma.gigClick.groupBy({ by: ["ipHash"], where: { ...clean7d, ipHash: { not: null } } }),
+    prisma.jobClick.count({ where: { isBot: true, createdAt: { gte: sevenDaysAgo } } }),
+    prisma.gigClick.count({ where: { isBot: true, createdAt: { gte: sevenDaysAgo } } }),
   ]);
 
   return {
     status: 200 as const,
     body: ok({
-      clicks: { totalJobClicks, totalGigClicks, jobClicksLast7, gigClicksLast7 },
+      clicks: {
+        totalJobClicks,
+        totalGigClicks,
+        jobClicksLast7,
+        gigClicksLast7,
+        uniqueHumanJobClicks7d: uniqueJobIps7d.length,
+        uniqueHumanGigClicks7d: uniqueGigIps7d.length,
+        botClicks7d: botJobClicks7d + botGigClicks7d,
+      },
       subscribers: subscriberCount,
       featuredSlots: featuredSlots.map((s) => ({
         jobTitle: s.job.title,
