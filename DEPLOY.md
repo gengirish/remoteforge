@@ -129,9 +129,47 @@ gh secret set API_URL --body "https://remoteforge-api.fly.dev"
 gh secret set CRON_SECRET   # prompts; paste the value set on Fly
 ```
 
-Workflow: `.github/workflows/cron.yml`
+Fly only shows a digest of each secret, never the value. If the value is lost, rotate it on both sides at once (this restarts the API machine), then update `CRON_SECRET` in your local `.env` files:
 
-## 4. Local dev
+```bash
+S=$(openssl rand -hex 32)
+fly secrets set CRON_SECRET="$S" -a remoteforge-api
+printf %s "$S" | gh secret set CRON_SECRET --repo gengirish/remoteforge
+```
+
+Workflow: `.github/workflows/cron.yml`. It runs ingest every 6h (`0 */6 * * *`) and the digest on Mondays at 08:00 UTC.
+
+### Verifying cron
+
+1. **Secret matches Fly** (from your machine; this runs a real ingest but sends no email):
+
+   ```bash
+   curl -fsS -H "Authorization: Bearer $(grep '^CRON_SECRET=' apps/api/.env | cut -d= -f2- | tr -d '\"')"      https://remoteforge-api.fly.dev/api/jobs/ingest
+   ```
+
+   Expect `{"success":true,"data":{"mode":"inline","total":...}}`. A 401 means the local value differs from Fly.
+
+2. **GitHub secrets are correct.** A manual dispatch runs **both** jobs, so the digest emails every subscriber:
+
+   ```bash
+   gh workflow run Cron --repo gengirish/remoteforge
+   gh run list --repo gengirish/remoteforge --workflow Cron --limit 1
+   gh run view <id> --repo gengirish/remoteforge --log | grep '"success"'
+   ```
+
+   `gh run watch` only follows in-progress runs; a run finishes in ~10s, so use `gh run view` afterwards.
+
+   To avoid emailing anyone, wait for the next scheduled run and check that its event is `schedule` and its status is ✓.
+
+Failure signatures in `--log-failed`:
+
+| Log line | Cause |
+|----------|-------|
+| `curl: (3) URL rejected: No host part in the URL` | `API_URL` secret missing |
+| `Authorization: Bearer ` with nothing after it | `CRON_SECRET` secret missing |
+| `curl: (22) ... 401` | `CRON_SECRET` differs from Fly |
+
+## 5. Local dev
 
 ```bash
 # Terminal 1 — API (Fly locally)
@@ -148,7 +186,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 API_URL=http://localhost:8080
 ```
 
-## 5. Optional worker
+## 6. Optional worker
 
 ```bash
 fly apps create remoteforge-ingestion
@@ -158,7 +196,7 @@ pnpm deploy:worker
 
 When `REDIS_URL` is set on the API app, ingest queues to BullMQ; otherwise runs inline.
 
-## 6. Razorpay webhook
+## 7. Razorpay webhook
 
 Point to Fly (not Vercel):
 
