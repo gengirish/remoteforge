@@ -10,7 +10,7 @@ India's home for **remote jobs** and **AI gig work** — a Turborepo monorepo ag
 - **Workers**: BullMQ + Redis on Fly.io (optional)
 - **Auth**: Clerk (optional)
 - **Payments**: Razorpay featured slots
-- **Alerts**: Resend email + WhatsApp (Sarvam)
+- **Alerts**: AgentMail email + WhatsApp (Sarvam)
 
 ## Architecture
 
