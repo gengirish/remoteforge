@@ -54,7 +54,7 @@ async function sendEmail(to: string, subject: string, text: string): Promise<Sen
 }
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? "https://remoteforge.in";
+  return process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://remoteforge.intelliforge.tech";
 }
 
 export async function sendJobDigestEmail(to: string, jobs: DigestJob[]): Promise<SendResult> {
