@@ -7,7 +7,7 @@
 ## Deploy & infrastructure
 
 - [ ] Verify Vercel prod deploy from `master` (web)
-- [ ] Verify Fly.io prod deploy (API, bom region)
+- [ ] Verify Fly.io prod deploy (API, sin region; bom is deprecated)
 - [ ] Confirm Neon Postgres connection + migrations applied
 - [ ] Set all prod env vars per DEPLOY.md (API URL, DATABASE_URL, CRON_SECRET)
 - [ ] Configure GitHub Actions cron → `/api/jobs/ingest` + `/api/cron/digest`

@@ -3,11 +3,11 @@
 Split deploy matching **IntelliForge** conventions (`intelliforge-otp` + `hrms-intelliforge` Vercel patterns):
 
 ```
-┌─────────────────────┐         ┌──────────────────────────────┐
-│  apps/web (UI)      │  HTTPS  │  apps/api (API)              │
-│  Vercel             │ ──────▶ │  Fly.io (sin)                │
-│  remoteforge.in     │         │  remoteforge-api.fly.dev     │
-└─────────────────────┘         └──────────────────────────────┘
+┌────────────────────────────────┐         ┌──────────────────────────────┐
+│  apps/web (UI)                 │  HTTPS  │  apps/api (API)              │
+│  Vercel                        │ ──────▶ │  Fly.io (sin)                │
+│  remoteforge.intelliforge.tech │         │  remoteforge-api.fly.dev     │
+└────────────────────────────────┘         └──────────────────────────────┘
                                          │
                                 ┌────────┴────────┐
                                 │  Neon Postgres  │
@@ -27,10 +27,24 @@ fly apps create remoteforge-api --org personal   # once
 fly secrets set --app remoteforge-api \
   DATABASE_URL="postgresql://..." \
   CRON_SECRET="..." \
-  CORS_ORIGINS="https://remoteforge.in,https://your-app.vercel.app"
+  CORS_ORIGINS="https://remoteforge.intelliforge.tech,https://your-app.vercel.app" \
+  CLERK_SECRET_KEY="sk_live_..." \
+  AGENTMAIL_API_KEY="am_us_..." \
+  AGENTMAIL_INBOX_ID="alerts@intelliforge.tech"
 
 pnpm deploy:api      # manual deploy; CI also deploys automatically, see below
 ```
+
+| Secret | Required | Without it |
+|--------|----------|------------|
+| `DATABASE_URL` | yes | API cannot serve data |
+| `CRON_SECRET` | yes | cron routes return 401 |
+| `CORS_ORIGINS` | yes | browsers are blocked |
+| `CLERK_SECRET_KEY` | when Clerk is on | signed-in routes treat every request as anonymous; the API verifies the Clerk session token sent as `Authorization: Bearer` |
+| `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX_ID` | for email | digest runs but sends nothing (see §5) |
+| `NEXT_PUBLIC_APP_URL` | no | email links default to `https://remoteforge.intelliforge.tech` |
+
+`fly secrets set` restarts the machine. `pnpm deploy:api` builds from your **working tree**, uncommitted changes included; to ship only `master`, deploy from a clean checkout or push and let CI deploy.
 
 ### Continuous deploy (GitHub Actions)
 
@@ -96,9 +110,9 @@ pnpm deploy:web      # or: vercel --prod
 ```env
 NEXT_PUBLIC_API_URL=https://remoteforge-api.fly.dev
 API_URL=https://remoteforge-api.fly.dev
-NEXT_PUBLIC_APP_URL=https://remoteforge.in
+NEXT_PUBLIC_APP_URL=https://remoteforge.intelliforge.tech
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=   # optional
-CLERK_SECRET_KEY=                    # optional
+CLERK_SECRET_KEY=                    # optional; set the same key on Fly or signed-in API calls are anonymous
 REMOTEFORGE_INTERNAL_KEY=            # same as Fly API — required for admin settings
 ADMIN_SETTINGS_TOKEN=                # passphrase for /admin/settings UI
 ```
@@ -110,7 +124,7 @@ Configure referral and affiliate links at **`/admin/settings`** (not indexed).
 1. Set on **Vercel** (web): `ADMIN_SETTINGS_TOKEN`, `REMOTEFORGE_INTERNAL_KEY`
 2. Set on **Fly API**: `REMOTEFORGE_INTERNAL_KEY` (same value)
 3. Run `pnpm db:push && pnpm db:seed` to create `ProductSetting` rows
-4. Open `https://remoteforge.in/admin/settings`, enter `ADMIN_SETTINGS_TOKEN`
+4. Open `https://remoteforge.intelliforge.tech/admin/settings`, enter `ADMIN_SETTINGS_TOKEN`
 
 **Remote job boards** (Remotive, WWR, Turing, Toptal, Remote.com, FlexJobs): affiliate tag IDs saved in DB; applied live on `/go/:id` redirects.
 
@@ -171,7 +185,60 @@ Failure signatures in `--log-failed`:
 | `Authorization: Bearer ` with nothing after it | `CRON_SECRET` secret missing |
 | `curl: (22) ... 401` | `CRON_SECRET` differs from Fly |
 
-## 5. Local dev
+## 5. Email (AgentMail)
+
+The weekly digest (`GET /api/cron/digest`) sends through [AgentMail](https://docs.agentmail.to) from `alerts@intelliforge.tech`. That inbox already exists in the IntelliForge AgentMail org, which also sends mail for other apps, so spam complaints here affect them too. Code: `packages/job-alerts/src/email.ts`.
+
+Use the scoped CLI. The unscoped `agentmail-cli` package fails on Windows with `Unsupported platform: win32-x64`. The CLI has no login; it reads `AGENTMAIL_API_KEY` from the environment.
+
+```bash
+# Create a key for this app (authenticate with any existing org key)
+AGENTMAIL_API_KEY=am_us_... npx @agentmail/cli api-keys create --name remoteforge-api
+
+# Put it on Fly (restarts the machine)
+fly secrets set AGENTMAIL_API_KEY=am_us_... AGENTMAIL_INBOX_ID=alerts@intelliforge.tech -a remoteforge-api
+```
+
+Set a key from your own shell, not a chat or a committed file.
+
+### Verifying email
+
+1. **Key can reach the inbox** (sends nothing):
+
+   ```bash
+   npx @agentmail/cli --format json inboxes retrieve --inbox-id alerts@intelliforge.tech
+   ```
+
+2. **Delivery works.** Send one message to yourself:
+
+   ```bash
+   npx @agentmail/cli --format json inboxes:messages send \
+     --inbox-id alerts@intelliforge.tech --to you@example.com \
+     --subject "RemoteForge AgentMail test" --text "Test send"
+   ```
+
+   A `message_id` in the response means AgentMail accepted the message. Check the inbox and the spam folder.
+
+3. **Digest end to end.** This emails **every** `Subscriber` row, and there is no unsubscribe link yet. The response body shows the outcome:
+
+   ```json
+   {"success":true,"data":{"subscribers":12,"emailsAttempted":12,"errors":[]}}
+   ```
+
+   The route returns 200 even when every send fails, so a green Cron run is not proof. `emailsAttempted` counts successful sends; `errors` holds up to five failures:
+
+   | `errors` entry | Cause |
+   |----------------|-------|
+   | `AGENTMAIL_API_KEY not configured` | secret missing on Fly |
+   | `AGENTMAIL_INBOX_ID not configured` | secret missing on Fly |
+   | `AgentMail API error 401/403: ...` | key revoked, or from another org |
+   | `AgentMail API error 404: ...` | inbox id wrong |
+
+### Rotating the key
+
+Create a new key as above, `fly secrets set AGENTMAIL_API_KEY=...`, confirm with step 1, then delete the old key with `npx @agentmail/cli api-keys list` and `api-keys delete`.
+
+## 6. Local dev
 
 ```bash
 # Terminal 1 — API (Fly locally)
@@ -188,7 +255,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 API_URL=http://localhost:8080
 ```
 
-## 6. Optional worker
+## 7. Optional worker
 
 ```bash
 fly apps create remoteforge-ingestion
@@ -198,7 +265,7 @@ pnpm deploy:worker
 
 When `REDIS_URL` is set on the API app, ingest queues to BullMQ; otherwise runs inline.
 
-## 7. Razorpay webhook
+## 8. Razorpay webhook
 
 Point to Fly (not Vercel):
 

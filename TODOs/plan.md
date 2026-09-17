@@ -62,7 +62,7 @@ Phase 3 — Ecosystem        [ ]  P3-integrations.md
 | M1.1 P1 affiliates live | Turing + Toptal ref links on senior-role CTAs; Outlier on gig pages |
 | M1.2 Click tracking | `/go/[id]` logs UTM + conversions field populated |
 | M1.3 Featured slots | Razorpay checkout → `isFeatured` on job; upsell banner visible |
-| M1.4 Alerts | Weekly digest sends to subscribers (Resend + optional WhatsApp) |
+| M1.4 Alerts | Weekly digest sends to subscribers (AgentMail + optional WhatsApp) |
 
 **Revenue hypothesis (Month 3):** ~₹36k/mo at 500 DAU — see scaffold Part 5.
 

@@ -24,6 +24,8 @@ pnpm deploy:web               # Vercel
 
 Single workspace: `pnpm --filter api lint`, `pnpm --filter web build`, etc.
 
+The API ships as one esbuild ESM bundle (`apps/api/package.json` `build`). Its `createRequire` banner is load-bearing: without it, CommonJS dependencies that call `require` (e.g. `ws` via `agentmail`) crash the server on boot. Typecheck does not catch this. After adding a dependency, run `pnpm --filter api build && node apps/api/dist/server.mjs` and hit `/health` before pushing, because CI deploys straight to production. Fly's `bom` region is deprecated; the API runs in `sin`.
+
 **There is no test framework.** No vitest/jest/playwright, no test directories. `lint` is `tsc --noEmit` in every workspace, and CI (`.github/workflows/ci.yml`) runs lint + `pnpm --filter web build`, then on pushes to `master` a `deploy-api` job ships the API to Fly (only when `apps/api`, `packages/` or the lockfile changed; uses the `FLY_API_TOKEN` repo secret). Don't add `version:` to `pnpm/action-setup`; it reads `packageManager` from `package.json` and fails if both are set. Do not claim a change is verified on the basis of tests; typecheck and, where it matters, exercise the endpoint.
 
 ## Architecture
@@ -54,7 +56,7 @@ Bodies use the envelope from `packages/api-core/src/response.ts`: `ok(data)` →
 ### Auth and trust boundaries
 
 - **Clerk is optional and feature-flagged.** `apps/web/lib/clerk-config.ts` exports `isClerkEnabled` (true only when a publishable key was present at build). `middleware.ts` and layouts branch on it, so the app must build and run with Clerk absent.
-- The web forwards the signed-in user as an **`X-Clerk-User-Id` header** and the API trusts it. That trust is only safe because `CORS_ORIGINS` restricts browsers — never expose those routes to arbitrary callers.
+- The web sends the Clerk **session token** as `Authorization: Bearer` (`getToken()` from `auth()` / `useAuth()`), and `clerkUserId()` in `apps/api/src/server.ts` verifies it with `@clerk/backend`. Never pass a user id from the client. Without a valid token, or with `CLERK_SECRET_KEY` unset on Fly, every user route sees an anonymous request.
 - Admin/internal routes require `X-Internal-Key` (`REMOTEFORGE_INTERNAL_KEY`); cron routes accept `Authorization: Bearer` or `X-Cron-Secret` via `authorizeCron()` against `CRON_SECRET`.
 
 ### Database
@@ -64,6 +66,10 @@ Prisma against Neon (pooled `-pooler` host, `sslmode=require`), 26 models, singl
 ### Ingestion
 
 `packages/ingestion` holds the sources and processors; `handleIngest` runs them **in-process on the API**. `workers/ingestion` is a BullMQ app that is **not currently deployed** (no `remoteforge-ingestion` app exists on Fly) — scheduling actually comes from `.github/workflows/cron.yml` hitting the API every 6h. Treat the worker as dormant unless you deploy it.
+
+### Email
+
+`packages/job-alerts/src/email.ts` sends through **AgentMail** (`agentmail` SDK), not Resend. It reads `AGENTMAIL_API_KEY` and `AGENTMAIL_INBOX_ID` (`alerts@intelliforge.tech`, shared with other IntelliForge apps) and never throws: a missing key or API error comes back as `{ ok: false, error }`. `handleDigest` still returns 200 when every send fails, so check `emailsAttempted` and `errors` in its body. Links use `NEXT_PUBLIC_APP_URL`, falling back to `https://remoteforge.intelliforge.tech`; `remoteforge.in` does not resolve. Setup and testing are in `DEPLOY.md`.
 
 USD→INR conversion syncs daily from Frankfurter into the `ExchangeRate` model (`packages/db/src/exchange-rate.ts`); `USD_TO_INR_RATE` in env is only a fallback.
 
