@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,11 +18,20 @@ export function SearchBar({
   defaultValue = "",
 }: SearchBarProps) {
   const [value, setValue] = useState(defaultValue);
+  // Debounce on typing only. Keying the effect on onSearch re-armed it on every
+  // parent render, and the late call replayed stale filters over newer clicks.
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+  const lastSearched = useRef(defaultValue);
 
   useEffect(() => {
-    const timer = setTimeout(() => onSearch(value), 300);
+    if (value === lastSearched.current) return;
+    const timer = setTimeout(() => {
+      lastSearched.current = value;
+      onSearchRef.current(value);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [value, onSearch]);
+  }, [value]);
 
   return (
     <div className={cn("relative", className)}>

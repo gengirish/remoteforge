@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // e2e builds go to their own dir so they don't clobber a dev server's .next,
+  // and skip standalone output, which `next start` doesn't use and which needs
+  // symlink rights on Windows.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+  output: process.env.NEXT_DIST_DIR ? undefined : "standalone",
   poweredByHeader: false,
   transpilePackages: ["@intelliforge/db"],
   images: {

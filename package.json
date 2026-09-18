@@ -9,6 +9,7 @@
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api dev",
     "lint": "turbo lint",
+    "test:e2e": "pnpm --filter web test:e2e",
     "ingest": "tsx --env-file=.env scripts/ingest.ts",
     "deploy:api": "fly deploy . --config apps/api/fly.toml --dockerfile apps/api/Dockerfile --ha=false --primary-region sin --regions sin",
     "deploy:worker": "fly deploy . --config workers/ingestion/fly.toml --dockerfile workers/ingestion/Dockerfile --ha=false --primary-region sin --regions sin",
