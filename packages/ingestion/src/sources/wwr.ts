@@ -10,7 +10,12 @@ export async function fetchWwrJobs(): Promise<NormalizedJob[]> {
   return items.map((item, index) => {
     const title = extractTag(item, "title") ?? "Untitled";
     const link = extractTag(item, "link") ?? "";
-    const description = extractTag(item, "description") ?? "";
+    // Without CDATA the RSS entity-escapes the HTML ("&lt;p&gt;"); decode it once
+    // and store HTML like the other sources. Drop the inline company logo.
+    const rawDescription = extractTag(item, "description") ?? "";
+    const description = (rawDescription.includes("&lt;") ? decodeEntities(rawDescription) : rawDescription)
+      .replace(/<img\b[^>]*>/gi, "")
+      .trim();
     const pubDate = extractTag(item, "pubDate");
     const region = extractTag(item, "region") ?? "";
 
@@ -21,10 +26,10 @@ export async function fetchWwrJobs(): Promise<NormalizedJob[]> {
       sourceId: link || String(index),
       title: title.replace(/:.*/, "").trim(),
       company,
-      description: stripHtml(description),
+      description,
       url: link,
       postedAt: pubDate ? new Date(pubDate) : new Date(),
-      tags: extractTagsFromDescription(description),
+      tags: extractTagsFromDescription(stripHtml(description)),
       category: mapWwrRegion(region),
     };
   });
@@ -39,6 +44,21 @@ function extractTag(xml: string, tag: string): string | null {
 function extractCompany(title: string): string {
   const parts = title.split(":");
   return parts.length > 1 ? (parts[0]?.trim() ?? "Unknown") : "Unknown";
+}
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+};
+
+/** One pass, so "&amp;nbsp;" becomes "&nbsp;" and is not decoded twice. */
+function decodeEntities(s: string): string {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
+    if (e[0] === "#") {
+      const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : m;
+    }
+    return NAMED_ENTITIES[e.toLowerCase()] ?? m;
+  });
 }
 
 function stripHtml(html: string): string {

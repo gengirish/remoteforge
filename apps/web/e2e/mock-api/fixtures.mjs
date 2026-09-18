@@ -75,6 +75,24 @@ export const closedJob = {
   isActive: false,
 };
 
+/**
+ * A WWR row as stored before the parser decoded entities: the whole body is
+ * escaped once, with a hostile payload inside. Reachable by slug only.
+ */
+export const escapedWwrJob = {
+  ...jobs[0],
+  id: "job_e2e_escaped",
+  slug: "java-developer-twikey-e2e",
+  title: "Java Developer",
+  company: "Twikey",
+  sourceBoard: "wwr",
+  sourceId: "e2e-4",
+  description:
+    '&lt;img src="https://example.com/logo.gif" /&gt; &lt;p&gt;&lt;strong&gt;Headquarters:&lt;/strong&gt; Ghent&lt;/p&gt; ' +
+    "&lt;ul&gt;&lt;li&gt;Build the&amp;nbsp;&lt;strong&gt;back-end&lt;/strong&gt;&lt;/li&gt;&lt;/ul&gt; " +
+    '&lt;script&gt;window.__xss = 1&lt;/script&gt;&lt;p onclick="window.__xss = 2"&gt;Apply today&lt;/p&gt;',
+};
+
 export const gigs = [
   {
     id: "gig_e2e_outlier",

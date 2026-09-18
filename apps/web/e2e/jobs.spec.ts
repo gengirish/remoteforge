@@ -83,6 +83,26 @@ test.describe("job detail", () => {
     await expect(page.getByText("Intl only")).toBeVisible();
   });
 
+  test("entity-escaped feed description renders as sanitized HTML", async ({ page }) => {
+    await page.goto("/jobs/java-developer-twikey-e2e");
+    const body = page.locator("article .prose");
+
+    await expect(body.locator("strong", { hasText: "Headquarters:" })).toBeVisible();
+    await expect(body.locator("li")).toHaveText("Build the back-end");
+    await expect(body).not.toContainText("<p>");
+    await expect(body).not.toContainText("&lt;");
+    await expect(body).not.toContainText("&nbsp;");
+    // The feed's inline logo and the hostile payload are dropped.
+    await expect(body.locator("img, script, [onclick]")).toHaveCount(0);
+    await body.getByText("Apply today").click();
+    expect(await page.evaluate(() => (window as { __xss?: number }).__xss)).toBeUndefined();
+
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      "content",
+      /^Headquarters: Ghent Build the back-end Apply today$/,
+    );
+  });
+
   test("closed job says so, disables applying, and drops structured data", async ({ page }) => {
     await page.goto("/jobs/closed-support-role-e2e");
     await expect(page.getByRole("status")).toContainText("no longer accepting applications");

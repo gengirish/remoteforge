@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import type { GigPlatform, Job } from "@intelliforge/db";
+import { jobDescriptionHtml, jobDescriptionText } from "./job-description";
 
 export function jobMetadata(job: Job): Metadata {
   return {
     title: `${job.title} at ${job.company} | RemoteForge`,
-    description: job.description.slice(0, 160),
+    description: jobDescriptionText(job.description, 160),
     openGraph: {
       title: `${job.title} — Remote Job`,
       description: `${job.company} · ${job.location}`,
@@ -70,7 +71,7 @@ export function jobJsonLd(job: Job) {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     title: job.title,
-    description: job.description,
+    description: jobDescriptionHtml(job.description),
     datePosted: postedDate.toISOString(),
     validThrough: validThrough.toISOString(),
     hiringOrganization: {
