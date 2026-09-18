@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { CoverLetterGenerator } from "@/components/cover-letter-generator";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
 import { fetchUsdToInrRate } from "@/lib/currency";
-import { apiGoUrl } from "@/lib/api-url";
+import { apiGoUrl, getPublicApiUrl } from "@/lib/api-url";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
 
 interface JobDetailPageProps {
@@ -190,7 +190,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 <ApplyTrackButton
                   jobId={job.id}
                   applyUrl={applyUrl}
-                  apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
+                  apiUrl={getPublicApiUrl()}
                 />
                 <ScoreResumeCTA job={job} />
               </div>

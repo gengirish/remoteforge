@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DataApiClient } from "./data-api-client";
+import { getPublicApiUrl } from "@/lib/api-url";
 
 export const revalidate = 86400;
 
@@ -57,7 +58,7 @@ const TIERS = [
 ] as const;
 
 export default function DataApiPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://remoteforge-api.fly.dev";
+  const apiUrl = getPublicApiUrl();
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SubmitClient } from "./submit-client";
+import { getPublicApiUrl } from "@/lib/api-url";
 
 export const metadata: Metadata = {
   title: "Share Your Remote Job Win | RemoteForge",
@@ -15,7 +16,7 @@ export default function SubmitWinPage() {
         Inspire thousands of Indian professionals by sharing your remote job story.
         All submissions are reviewed before publishing.
       </p>
-      <SubmitClient apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""} />
+      <SubmitClient apiUrl={getPublicApiUrl()} />
     </div>
   );
 }

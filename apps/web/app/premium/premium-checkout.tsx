@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { isClerkEnabled } from "@/lib/clerk-config";
+import { getPublicApiUrl } from "@/lib/api-url";
 
 export function PremiumCheckout() {
   if (!isClerkEnabled) {
@@ -19,7 +20,7 @@ export function PremiumCheckout() {
 function PremiumCheckoutInner() {
   const { userId, getToken } = useAuth();
   const [loading, setLoading] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const apiUrl = getPublicApiUrl();
 
   async function handleCheckout() {
     if (!userId) {

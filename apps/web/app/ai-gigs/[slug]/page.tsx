@@ -14,7 +14,7 @@ import {
   fetchGigSlugs,
   fetchIndiaGigAlternatives,
 } from "@/lib/data";
-import { apiGoUrl } from "@/lib/api-url";
+import { apiGoUrl, getPublicApiUrl } from "@/lib/api-url";
 import { fetchUsdToInrRate } from "@/lib/currency";
 import { faqPageJsonLd, gigJsonLd, gigMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -167,7 +167,7 @@ export default async function GigDetailPage({ params }: { params: { slug: string
         </div>
         <GigEarningsForm
           platformId={platform.id}
-          apiUrl={process.env.NEXT_PUBLIC_API_URL ?? ""}
+          apiUrl={getPublicApiUrl()}
         />
       </section>
 

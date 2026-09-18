@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SalarySubmitClient } from "./salary-submit-client";
+import { getPublicApiUrl } from "@/lib/api-url";
 
 export const metadata: Metadata = {
   title: "Submit Your Salary | RemoteForge",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function SalarySubmitPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const apiUrl = getPublicApiUrl();
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-3xl font-bold">Submit Your Salary</h1>
