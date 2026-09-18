@@ -8,7 +8,7 @@ export async function fetchWwrJobs(): Promise<NormalizedJob[]> {
   const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
 
   return items.map((item, index) => {
-    const title = extractTag(item, "title") ?? "Untitled";
+    const { company, title } = splitTitle(extractTag(item, "title") ?? "Untitled");
     const link = extractTag(item, "link") ?? "";
     // Without CDATA the RSS entity-escapes the HTML ("&lt;p&gt;"); decode it once
     // and store HTML like the other sources. Drop the inline company logo.
@@ -19,12 +19,10 @@ export async function fetchWwrJobs(): Promise<NormalizedJob[]> {
     const pubDate = extractTag(item, "pubDate");
     const region = extractTag(item, "region") ?? "";
 
-    const company = extractCompany(title);
-
     return {
       sourceBoard: "wwr",
       sourceId: link || String(index),
-      title: title.replace(/:.*/, "").trim(),
+      title,
       company,
       description,
       url: link,
@@ -41,9 +39,17 @@ function extractTag(xml: string, tag: string): string | null {
   return match?.[1]?.trim() ?? null;
 }
 
-function extractCompany(title: string): string {
-  const parts = title.split(":");
-  return parts.length > 1 ? (parts[0]?.trim() ?? "Unknown") : "Unknown";
+/**
+ * WWR titles are "Company: Job Title". Split on the first colon only, since job
+ * titles can contain colons too. Keeping the text before the colon as the title
+ * stored the company name as the job title.
+ */
+function splitTitle(raw: string): { company: string; title: string } {
+  const idx = raw.indexOf(":");
+  if (idx <= 0) return { company: "Unknown", title: raw.trim() };
+  const company = raw.slice(0, idx).trim();
+  const title = raw.slice(idx + 1).trim();
+  return title ? { company, title } : { company: "Unknown", title: company };
 }
 
 const NAMED_ENTITIES: Record<string, string> = {
