@@ -12,3 +12,9 @@ dist
 
 # Claude Code agent worktrees (local only)
 .claude/worktrees/
+
+# Playwright e2e (apps/web)
+.next-e2e
+test-results
+playwright-report
+blob-report
