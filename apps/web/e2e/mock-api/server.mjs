@@ -10,6 +10,7 @@ import { createServer } from "node:http";
 import {
   closedJob,
   companies,
+  escapedWwrJob,
   gigEarnings,
   gigs,
   incomeReport,
@@ -79,7 +80,7 @@ function handleGet(path, q) {
 
   let m;
   if ((m = path.match(/^\/api\/jobs\/by-slug\/([^/]+)$/))) {
-    const job = [...jobs, closedJob].find((j) => j.slug === m[1]);
+    const job = [...jobs, closedJob, escapedWwrJob].find((j) => j.slug === m[1]);
     return job ? ok(job) : fail(404, "Job not found");
   }
 

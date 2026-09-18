@@ -15,6 +15,7 @@ import { CoverLetterGenerator } from "@/components/cover-letter-generator";
 import { fetchJobBySlug, fetchJobSlugs } from "@/lib/data";
 import { fetchUsdToInrRate } from "@/lib/currency";
 import { apiGoUrl, getPublicApiUrl } from "@/lib/api-url";
+import { jobDescriptionHtml, jobDescriptionText } from "@/lib/job-description";
 import { jobJsonLd, jobMetadata } from "@/lib/seo";
 
 interface JobDetailPageProps {
@@ -175,7 +176,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
         <div className="px-6 py-8 sm:px-8">
           <div className="prose prose-sm max-w-none prose-headings:font-display prose-a:text-primary">
-            <div dangerouslySetInnerHTML={{ __html: job.description }} />
+            <div dangerouslySetInnerHTML={{ __html: jobDescriptionHtml(job.description) }} />
           </div>
 
           {isClosed ? (
@@ -199,7 +200,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 <CoverLetterGenerator
                   jobTitle={job.title}
                   company={job.company}
-                  jobDescription={job.description.slice(0, 1000)}
+                  jobDescription={jobDescriptionText(job.description, 1000)}
                   userSkills={userSkills}
                   userExperience={userExperience}
                   isPremium={isPremium}
