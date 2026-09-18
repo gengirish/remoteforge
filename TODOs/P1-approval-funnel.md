@@ -37,35 +37,40 @@ Page: `apps/web/app/ai-gigs/[slug]/page.tsx` (slugs `outlier-ai`, `mercor`, `ali
 
 For each platform:
 
-- [ ] **"How to get approved on {Platform} from India"** section above "Real Earnings from India": eligibility and KYC/ID, the qualification steps, common rejection reasons, realistic review time, payout method in India
-- [ ] **Approval-alert capture**: `EmailCapture` with `source = "gig-{slug}-alerts"`, gig alerts on, job alerts off. Copy: "Get notified when {Platform} opens onboarding for your skills"
-- [ ] **Prep waitlist capture**: `EmailCapture` with `source = "prep-waitlist"`, platform named in the description
-- [ ] Referral CTA stays; keep referral terms in mind (no bonus-sharing language)
-- [ ] Guardrail: prep and process only; **no assessment questions or answers**
-- [ ] Verify: `pnpm --filter web lint`, page renders with API down (`apiFetch` returns `null`), one live signup lands with the right `source`
+- [x] **"How to get approved on {Platform} from India"** section above "Real Earnings from India" (`9787d8c`). Content lives in `apps/web/content/gig-approval/{platform}.ts`, keyed by `GigPlatform.slug`; the section renders only for slugs that have an entry
+- [x] **Approval-alert capture** (`9787d8c`). As built: `source = "gig-approval-alert"` for all three platforms, with the platform carried in `signal = "approval-alert:{slug}"` (stored in `Subscriber.signals`), not a per-platform `source`
+- [x] **Prep waitlist capture**: `source = "prep-waitlist"`, `signal = "prep-waitlist:{slug}"`, platform named in the copy
+- [x] Referral CTA stays ("Apply / Refer")
+- [ ] Guardrail: prep and process only; **no assessment questions or answers** (standing rule; re-check on every content edit)
+- [ ] Verify: `pnpm --filter web lint`, page renders with API down (`apiFetch` returns `null`), one live signup lands with the right `source` and `signal`
 
 Content is the moat. If editorial content lives outside the page file, keep it per-platform (e.g. a content map keyed by slug), not in the DB, until it needs editing without a deploy.
 
 | Platform | Section | Alert capture | Waitlist capture | Live |
 |---|---|---|---|---|
-| Outlier AI | [ ] | [ ] | [ ] | [ ] |
-| Mercor | [ ] | [ ] | [ ] | [ ] |
-| Alignerr | [ ] | [ ] | [ ] | [ ] |
+| Outlier AI | [x] | [x] | [x] | [x] |
+| Mercor | [x] | [x] | [x] | [x] |
+| Alignerr | [x] | [x] | [x] | [x] |
+
+"Live" means both captures render on the production page (checked 2026-09-18). No live signup has been submitted yet.
 
 ## 5. Five approval SEO pages
 
 Model on `apps/web/app/guides/ai-gigs-india-starter` (metadata helper in `apps/web/lib/seo.ts`). Each page: one H1 matching the query, the approval-alert capture (`source = "guide-{slug}"`), the prep waitlist capture, links to the relevant gig detail pages, and an entry in `apps/web/app/sitemap.ts`.
 
-| # | Target query | Route (proposed) | Written | Shipped | In sitemap |
-|---|---|---|---|---|---|
-| 1 | outlier ai review india | `/guides/outlier-ai-review-india` | [ ] | [ ] | [ ] |
-| 2 | outlier assessment failed india | `/guides/outlier-assessment-failed` | [ ] | [ ] | [ ] |
-| 3 | mercor interview tips | `/guides/mercor-interview-tips` | [ ] | [ ] | [ ] |
-| 4 | alignerr approval time india | `/guides/alignerr-approval-time-india` | [ ] | [ ] | [ ] |
-| 5 | ai training jobs india 2026 | `/guides/ai-training-jobs-india-2026` | [ ] | [ ] | [ ] |
+As built (`9787d8c`): content is in `apps/web/content/guides/*.ts`, rendered by `apps/web/app/guides/[slug]/page.tsx` with FAQPage JSON-LD and a Sources section, and added to the sitemap from `guideSlugs`. Each guide has **one** capture, `source = "guide-{slug}"`, whose `signal` picks the intent: the Outlier and Mercor guides post `prep-waitlist:*`, the Alignerr and 2026 guides post `approval-alert:*`. Two routes differ from the proposal.
 
-- [ ] Only publish pay figures and review times we can source or have collected; no invented user counts
-- [ ] Submit the sitemap in Google Search Console after all five ship
+| # | Target query | Route (as shipped) | Written | Shipped | In sitemap |
+|---|---|---|---|---|---|
+| 1 | outlier ai review india | `/guides/outlier-review-india` | [x] | [x] | [x] |
+| 2 | outlier assessment failed india | `/guides/outlier-assessment-failed-india` | [x] | [x] | [x] |
+| 3 | mercor interview tips | `/guides/mercor-interview-tips` | [x] | [x] | [x] |
+| 4 | alignerr approval time india | `/guides/alignerr-approval-time-india` | [x] | [x] | [x] |
+| 5 | ai training jobs india 2026 | `/guides/ai-training-jobs-india-2026` | [x] | [x] | [x] |
+
+- [ ] Only publish pay figures and review times we can source or have collected; no invented user counts (each guide cites sources; figures not yet audited)
+- [ ] Decide whether guides need the second capture, or whether one signal-routed capture per guide is enough
+- [ ] Submit the sitemap in Google Search Console (all five are in the live `sitemap.xml` as of 2026-09-18)
 
 ## 6. Housekeeping
 
@@ -77,6 +82,6 @@ Model on `apps/web/app/guides/ai-gigs-india-starter` (metadata helper in `apps/w
 
 ## Exit criteria (2026-10-01)
 
-- [ ] All three gig detail pages and five guides live, each with both captures
+- [~] All three gig detail pages and five guides live: gig pages have both captures; guides have one each (see §5)
 - [ ] `/go` clicks exclude crawlers; stale jobs expire on every ingest
 - [ ] First week of clean numbers recorded in `plan.md` targets table

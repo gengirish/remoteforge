@@ -39,7 +39,7 @@ GitHub Actions cron ───────────▶ /api/jobs/ingest (6h), 
 
 ### The handler indirection (read this before adding an endpoint)
 
-Business logic does **not** live in the server. `packages/api-core/src/handlers.ts` (~1,650 lines) holds framework-agnostic `handle*()` functions that return `{ status, body }`; `apps/api/src/server.ts` (~440 lines) is pure Hono routing that unwraps them. Adding an endpoint means three files:
+Business logic does **not** live in the server. `packages/api-core/src/handlers.ts` (~1,850 lines) holds framework-agnostic `handle*()` functions that return `{ status, body }`; `apps/api/src/server.ts` (~470 lines) is pure Hono routing that unwraps them. Adding an endpoint means three files:
 
 1. Write `handleThing()` in `packages/api-core/src/handlers.ts`
 2. Export it from `packages/api-core/src/index.ts`
@@ -52,6 +52,12 @@ Bodies use the envelope from `packages/api-core/src/response.ts`: `ok(data)` →
 `apps/web/lib/data.ts` is the **only** place the UI talks to the API. Its `apiFetch` unwraps the envelope and **returns `null` on any failure** — callers get `null`, never an exception, so pages must handle empty state rather than try/catch. Default cache is `next: { revalidate: 3600 }`; pages set `export const revalidate = 3600` (or `dynamic = "force-dynamic"` for authed pages).
 
 `apps/web` has no API routes except `app/api/cover-letter/route.ts`. Anything else server-side belongs in `api-core`.
+
+Editorial content is typed TypeScript in `apps/web/content/`, not the DB: `guides/` feeds `/guides/[slug]` (and the sitemap via `guideSlugs`), and `gig-approval/` feeds the approval section on `/ai-gigs/[slug]`, keyed by `GigPlatform.slug`. Adding a guide means a new file plus an entry in `content/guides/index.ts`. Guides give prep and process only, never assessment answers.
+
+### Subscribers and click metrics
+
+`POST /api/subscribe` takes a `source` (first touch, kept on later signups) and an optional `signal` (`approval-alert:{slug}` or `prep-waitlist:{slug}`) appended to `Subscriber.signals`. A new signup from a guide keeps `source = "guide-{slug}"`, so count the prep waitlist as `source = 'prep-waitlist'` **or** any `prep-waitlist:*` signal. `/go/:id` stores every click but flags crawlers (`isBot`) and same-IP repeats (`isDuplicate`); every metric query must filter both to false. Metrics are read by hand, never on a timer (see the cost constraint).
 
 ### Auth and trust boundaries
 

@@ -14,7 +14,7 @@ Split deploy matching **IntelliForge** conventions (`intelliforge-otp` + `hrms-i
                                 │  (shared)       │
                                 └─────────────────┘
 
-Optional: workers/ingestion on Fly (BullMQ + Redis)
+Dormant: workers/ingestion (BullMQ + Redis), not deployed; see §7
 Cron: GitHub Actions → Fly API /api/jobs/ingest + /api/cron/digest
 ```
 
@@ -42,7 +42,13 @@ pnpm deploy:api      # manual deploy; CI also deploys automatically, see below
 | `CORS_ORIGINS` | yes | browsers are blocked |
 | `CLERK_SECRET_KEY` | when Clerk is on | signed-in routes treat every request as anonymous; the API verifies the Clerk session token sent as `Authorization: Bearer` |
 | `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX_ID` | for email | digest runs but sends nothing (see §5) |
-| `NEXT_PUBLIC_APP_URL` | no | email links default to `https://remoteforge.intelliforge.tech` |
+| `REMOTEFORGE_INTERNAL_KEY` | for admin | `/api/internal/*` returns 401, so `/admin/settings` can't load or save (see §3) |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | for payments | checkout and the payment webhook fail (see §8) |
+| `UNSUBSCRIBE_SECRET`, `API_PUBLIC_URL` | no | see §5 Unsubscribe |
+| `NEXT_PUBLIC_APP_URL` | no | email links and referral share links default to `https://remoteforge.intelliforge.tech` |
+| `JOB_STALE_DAYS`, `JOB_MAX_AGE_DAYS` | no | stale-job expiry uses 3 and 30 days |
+| `LOGO_DEV_TOKEN`, `RAPIDAPI_KEY` | no | ingest skips logo and JSearch salary enrichment |
+| `REDIS_URL` | **leave unset** | ingest runs inline; setting it queues ingest for a worker that isn't deployed (§7) |
 
 `fly secrets set` restarts the machine. `pnpm deploy:api` builds from your **working tree**, uncommitted changes included; to ship only `master`, deploy from a clean checkout or push and let CI deploy.
 
@@ -80,19 +86,23 @@ curl https://remoteforge-api.fly.dev/api/home
 | `GET /api/jobs` | Job listings |
 | `GET /api/jobs/by-slug/:slug?full=true` | Job detail |
 | `GET /api/gigs` | Gig platforms |
-| `GET /go/:id` | Affiliate redirect |
-| `POST /api/subscribe` | Newsletter signup |
+| `GET /go/:id` | Affiliate redirect; flags crawler (`isBot`) and repeat (`isDuplicate`) clicks |
+| `POST /api/subscribe` | Signup with `source` and optional `signal` |
+| `GET /api/unsubscribe` | Unsubscribe confirm page; no side effects |
+| `POST /api/unsubscribe` | Deletes the subscriber |
 | `POST /api/featured/create-order` | Razorpay |
 | `POST /api/webhooks/razorpay` | Payment webhook |
-| `GET /api/jobs/ingest` | Cron — job ingestion |
-| `GET /api/cron/digest` | Cron — email digest |
+| `GET`/`POST /api/jobs/ingest` | Cron — job ingestion |
+| `GET /api/cron/digest` | Cron — email digest (`?to=` for one address) |
 | `GET /api/internal/affiliate-settings` | Admin — list affiliate config |
 | `PUT /api/internal/affiliate-settings` | Admin — save job board affiliate tags |
 | `PATCH /api/internal/gig-platforms/:id/affiliate` | Admin — save gig referral URLs |
 
+This table covers ops-relevant routes; `apps/api/src/server.ts` has the full list (user, referral, salary, community, employer, premium and `/api/v2` data API routes).
+
 ## 2. Vercel — UI layer (`apps/web`)
 
-Like **hrms-intelliforge**: Next.js on Vercel, no API routes in the web app.
+Like **hrms-intelliforge**: Next.js on Vercel. The only API route in the web app is `app/api/cover-letter`; everything else calls the Fly API.
 
 ```bash
 cd apps/web
@@ -103,7 +113,7 @@ vercel env add NEXT_PUBLIC_APP_URL
 pnpm deploy:web      # or: vercel --prod
 ```
 
-**Root directory in Vercel dashboard:** `apps/web`
+**Root directory in Vercel dashboard:** `apps/web`. Vercel also deploys every push to `master`.
 
 ### Web env vars
 
@@ -115,6 +125,9 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=   # optional
 CLERK_SECRET_KEY=                    # optional; set the same key on Fly or signed-in API calls are anonymous
 REMOTEFORGE_INTERNAL_KEY=            # same as Fly API — required for admin settings
 ADMIN_SETTINGS_TOKEN=                # passphrase for /admin/settings UI
+NEXT_PUBLIC_FORGEAHEAD_URL=https://forgeahead.intelliforge.tech
+NEXT_PUBLIC_VETTD_URL=https://www.vettd-app.com
+ANTHROPIC_API_KEY=                   # optional; only app/api/cover-letter uses it
 ```
 
 ## 3. Product settings (affiliate links)
@@ -271,7 +284,11 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 API_URL=http://localhost:8080
 ```
 
-## 7. Optional worker
+## 7. Dormant worker
+
+`workers/ingestion` is **not deployed**: no `remoteforge-ingestion` app exists on Fly, and the 6h GitHub Actions cron runs ingest inline on the API. Keep `REDIS_URL` unset on the API: when it is set, `/api/jobs/ingest` queues to BullMQ and returns `mode: "queued"`, and without a worker nothing ever ingests. If a Redis connection fails it falls back to inline.
+
+To deploy it anyway:
 
 ```bash
 fly apps create remoteforge-ingestion
@@ -279,7 +296,6 @@ fly secrets set --app remoteforge-ingestion DATABASE_URL=... REDIS_URL=...
 pnpm deploy:worker
 ```
 
-When `REDIS_URL` is set on the API app, ingest queues to BullMQ; otherwise runs inline.
 
 ## 8. Razorpay webhook
 

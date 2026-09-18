@@ -2,6 +2,8 @@
 
 **Phase goal:** Closed-loop marketplace — discover (RemoteForge) → prepare (ForgeAhead) → screen (Vettd).
 
+**Status (2026-09-18): deferred** ([plan.md](./plan.md)).
+
 Reference: scaffold Part 7 (I1–I6).
 
 ---
@@ -10,7 +12,7 @@ Reference: scaffold Part 7 (I1–I6).
 
 - [x] `ScoreResumeCTA` on `/jobs/[slug]` (basic)
 - [ ] ForgeAhead accepts `jd_url` + pre-fetches job from RemoteForge API
-- [ ] Public API: `GET /api/jobs/by-slug/[slug]` returns `{ title, description, tags }` for ForgeAhead
+- [x] Public API: `GET /api/jobs/by-slug/:slug` returns `{ title, company, description, tags, category, isActive }` (`?full=true` returns the whole row)
 - [ ] Cross-auth handoff token on CTA URL (`@intelliforge/cross-auth`)
 
 ## I2 — RemoteForge → Vettd (employer upsell)

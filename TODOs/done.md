@@ -4,8 +4,17 @@ Reverse-chronological. One line per shipped item.
 
 ---
 
+## 2026-09-18
+
+- **Docs**: README, DEPLOY, CLAUDE.md, the project skill and TODOs brought in line with the code (routes, env, AgentMail, `sin`, guides)
+
 ## 2026-09-17
 
+- **Domain**: referral share links, Data API messages, CORS fallback and env examples point at `remoteforge.intelliforge.tech`; `remoteforge.in` does not resolve (`8b32e76`)
+- **Approval guides**: five `/guides/[slug]` pages with FAQPage JSON-LD and sitemap entries; approval section, alert capture and prep waitlist capture on Outlier, Mercor and Alignerr gig pages; per-platform `Subscriber.signals`; expired job pages render a closed state instead of 404 (`9787d8c`)
+- **Digest unsubscribe**: HMAC-signed links plus `List-Unsubscribe` headers; GET confirms, POST deletes (`f5d42b5`, `de9691d`)
+- **Clean clicks**: `/go` flags crawler (`isBot`) and repeat (`isDuplicate`) clicks; `GigClick` records `userAgent` (`f5d42b5`)
+- **Stale jobs**: ingest deactivates jobs older than `JOB_MAX_AGE_DAYS` and unseen for `JOB_STALE_DAYS`, per source, only after a successful fetch (`f5d42b5`)
 - **Positioning v2.0**: approval-led AI gigs; `docs/POSITIONING.md` rewritten with traction data and revenue order
 - **Homepage**: "Get approved on AI training platforms from India", approval-alert capture, prep waitlist capture (`ed4579a`)
 - **Subscribe fix**: every signup had thrown on `wantsJobAlerts`; now stripped, `source` recorded (`ed4579a`)

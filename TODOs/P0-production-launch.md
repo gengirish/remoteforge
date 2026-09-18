@@ -35,13 +35,13 @@
 ## Performance & SEO baseline
 
 - [ ] ISR/revalidate windows appropriate (1h listings)
-- [ ] `robots.txt` + sitemap.xml (create if missing)
+- [x] `robots.txt` + sitemap.xml: `app/robots.ts` and `app/sitemap.ts`; sitemap live with jobs, gigs, guides
 - [ ] Core Web Vitals spot check on Vercel preview
 
 ## Documentation
 
-- [ ] README + DEPLOY.md match actual prod URLs
-- [ ] `.env.example` complete for web + api + worker
+- [x] README + DEPLOY.md match actual prod URLs (2026-09-18)
+- [~] `.env.example` complete for web + api + worker: root and `apps/api` filled in 2026-09-18; `apps/web` has no example file (web vars are listed in DEPLOY.md §2)
 
 ---
 

@@ -4,6 +4,8 @@
 
 Reference: scaffold Part 5 (revenue model) + affiliate master list.
 
+**Status (2026-09-18): legacy.** Per [plan.md](./plan.md), referrals stay live but no new job-side affiliate or featured-slot work until the Day-30 gate. Current work is in [P1-approval-funnel.md](./P1-approval-funnel.md).
+
 ---
 
 ## Affiliate enrollment (human tasks)
@@ -17,7 +19,7 @@ Reference: scaffold Part 5 (revenue model) + affiliate master list.
 
 - [ ] Senior-role job detail: show Turing/Toptal CTA when tags match (engineering, senior, etc.)
 - [ ] Gig detail: primary CTA uses Outlier/personal referral URL from seed
-- [ ] `/go/[id]` tracker: log `utmSource`, `referrer`, `ipHash` on every outbound click
+- [~] `/go/[id]` tracker: log `utmSource`, `referrer`, `ipHash` on every outbound click. Job clicks log all three plus `userAgent`, `isBot`, `isDuplicate`; gig clicks log everything except `referrer`
 - [ ] Admin view or SQL query for top clicked jobs/platforms (conversion reporting v1)
 
 ## Apply flow strategy
@@ -35,9 +37,9 @@ Reference: scaffold Part 5 (revenue model) + affiliate master list.
 
 ## Alerts (retention → clicks)
 
-- [ ] Weekly email digest: new India-friendly jobs + gig updates
+- [x] Weekly email digest: new India-friendly jobs + gig updates. Sent through AgentMail by the Monday cron; `?to=` sends to one address for testing (DEPLOY.md §5)
 - [ ] WhatsApp alerts via Sarvam (optional phone on subscribe)
-- [ ] Unsubscribe / preference management
+- [~] Unsubscribe / preference management: signed one-click unsubscribe shipped (`f5d42b5`); no preference management yet
 
 ## P2 affiliates (defer until P1 stable)
 

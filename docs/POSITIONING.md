@@ -150,13 +150,15 @@ Unchanged: India badge, INR context, apply CTA. Cross-link: "Earn while you sear
 
 ## 7. Next 30 days
 
-| # | Ship | Why |
-|---|---|---|
-| 1 | **Fix ingestion cron** — set the API URL and `CRON_SECRET` repo secrets `.github/workflows/cron.yml` reads | Stale listings undermine trust; the digest cron likely fails the same way |
-| 2 | **Deploy the subscribe fix + new homepage** | Owned audience starts at 0; this is the first working capture |
-| 3 | **Approval capture + prep waitlist on gig detail pages** (Outlier, Mercor, Alignerr first) | Where the only real intent is (see §1) |
-| 4 | **Five approval SEO pages** | "outlier assessment failed india", "mercor interview tips", "alignerr approval time india", "outlier ai review india", "ai training jobs india 2026" |
-| 5 | **Bot filtering on `/go` click tracking** | Conversion rates are meaningless while crawlers inflate clicks |
+| # | Ship | Why | Status (2026-09-18) |
+|---|---|---|---|
+| 1 | **Fix ingestion cron** — set the API URL and `CRON_SECRET` repo secrets `.github/workflows/cron.yml` reads | Stale listings undermine trust; the digest cron likely fails the same way | Done 2026-09-17 |
+| 2 | **Deploy the subscribe fix + new homepage** | Owned audience starts at 0; this is the first working capture | Done 2026-09-17 (`ed4579a`) |
+| 3 | **Approval capture + prep waitlist on gig detail pages** (Outlier, Mercor, Alignerr first) | Where the only real intent is (see §1) | Live (`9787d8c`) |
+| 4 | **Five approval SEO pages** | "outlier assessment failed india", "mercor interview tips", "alignerr approval time india", "outlier ai review india", "ai training jobs india 2026" | Live under `/guides/` (`9787d8c`) |
+| 5 | **Bot filtering on `/go` click tracking** | Conversion rates are meaningless while crawlers inflate clicks | Done (`f5d42b5`); filter `isBot` and `isDuplicate` |
+
+Tracking: [TODOs/P1-approval-funnel.md](../TODOs/P1-approval-funnel.md).
 
 ---
 
@@ -167,7 +169,7 @@ Measure on **distinct humans**, not raw clicks.
 | Metric | Day-30 target | Day-90 target |
 |---|---|---|
 | Subscribers (any source) | 150 | 1,000 |
-| Prep waitlist (`source = "prep-waitlist"`) | 50 → build the Outlier pack | First 20 paid packs |
+| Prep waitlist (`source = "prep-waitlist"` or a `prep-waitlist:*` entry in `signals`) | 50 → build the Outlier pack | First 20 paid packs |
 | Gig referral clicks, unique/week | 30 | 100 |
 | Share of sessions landing on `/ai-gigs/*` or `/guides/*` | > 40% | > 50% |
 | Sourcing conversations with vendors | — | 3 (only if ≥ 1,000 skill-tagged subscribers) |

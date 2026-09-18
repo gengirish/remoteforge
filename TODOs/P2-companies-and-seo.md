@@ -4,13 +4,15 @@
 
 Context: WWR company leaderboard (100 employers, job counts + bios). Jobs already ingest via WWR RSS — this phase adds **discovery and SEO**, not a new ingestion source.
 
+**Status (2026-09-18): deferred** until the Day-30 gate ([plan.md](./plan.md)). Already in the code, built outside this plan: a `CompanyProfile` model (filled by `packages/ingestion/src/processors/company-profile.ts`), `GET /api/companies/india`, `GET /api/companies/:slug`, and the pages `/companies/[slug]` and `/companies/hiring-from-india`. Blog-style content shipped as `/guides/[slug]` instead of `/blog` (see [P1-approval-funnel.md](./P1-approval-funnel.md) §5).
+
 ---
 
 ## v1 — No schema change (quick win)
 
 - [ ] API: `GET /api/companies` — aggregate `Job` by `company`: count, indiaFriendly ratio, latest `postedAt`
 - [ ] Page: `/companies` — sortable table/grid (job count desc)
-- [ ] Page: `/companies/[slug]` — jobs list for that company + stats
+- [~] Page: `/companies/[slug]` — exists, backed by `CompanyProfile`; shows stats and links to a filtered `/jobs` search rather than listing jobs inline
 - [ ] Homepage section: “Top remote employers hiring now” (top 10 by active job count)
 - [ ] Link company name on `JobCard` → `/companies/[slug]`
 
@@ -30,18 +32,18 @@ Context: WWR company leaderboard (100 employers, job counts + bios). Jobs alread
 
 ## Blog & content (SEO moat)
 
-- [ ] MDX or markdown blog under `/blog`
-- [ ] Post 1: “How to get approved on Outlier AI from India” (P1 editorial moat)
+- [—] MDX or markdown blog under `/blog`: superseded by typed content in `apps/web/content/guides/` served at `/guides/[slug]`
+- [x] Post 1: “How to get approved on Outlier AI from India”: shipped as the Outlier approval section plus `/guides/outlier-review-india` and `/guides/outlier-assessment-failed-india`
 - [ ] Post 2: “RLHF vs data annotation: which pays more in India?”
 - [ ] Post 3: “WWR TopAccess vs free job aggregators (2026)”
-- [ ] Post 4: “Complete guide to AI data annotation jobs India 2026”
+- [x] Post 4: “Complete guide to AI data annotation jobs India 2026”: shipped as `/guides/ai-training-jobs-india-2026`
 - [ ] Post 5: “Remote jobs that hire from India — 50 companies”
 - [ ] Internal links: blog → `/jobs`, `/ai-gigs`, `/companies/[slug]`
 
 ## SEO plumbing
 
-- [ ] Dynamic sitemap: jobs, gigs, companies, blog
-- [ ] Canonical URLs on tag/category/company pages
+- [~] Dynamic sitemap: jobs, gigs, guides and comparisons are in `apps/web/app/sitemap.ts`; companies are not
+- [~] Canonical URLs on tag/category/company pages: set on the `/india` tag and category variants only
 - [ ] Meta descriptions per listing type
 - [ ] Review JSON-LD on job + gig detail pages
 
