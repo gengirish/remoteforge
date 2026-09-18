@@ -2,7 +2,7 @@
 import { JOB_BOARD_AFFILIATES } from "@intelliforge/affiliate-links";
 import { prisma } from "@intelliforge/db";
 import { runIngestion } from "@intelliforge/ingestion";
-import { sendGigDigestEmail, sendJobDigestEmail } from "@intelliforge/job-alerts";
+import { sendGigDigestEmail, sendJobDigestEmail, sendSignupConfirmationEmail, type SignupIntent } from "@intelliforge/job-alerts";
 import { z } from "zod";
 import { loadAffiliateSettings } from "@intelliforge/db";
 import { getAffiliateSettingsForAdmin } from "./affiliate-config";
@@ -223,6 +223,7 @@ export async function handleSubscribe(body: unknown) {
   // wantsJobAlerts and signal are not Subscriber columns; passing them through made every create throw.
   const { wantsJobAlerts: _wantsJobAlerts, signal, ...data } = parsed.data;
   const isPrepWaitlist = data.source === "prep-waitlist" || signal?.startsWith("prep-waitlist:") === true;
+  const existing = await prisma.subscriber.findUnique({ where: { email: data.email }, select: { signals: true } });
   const subscriber = await prisma.subscriber.upsert({
     where: { email: data.email },
     create: { ...data, signals: signal ? [signal] : [] },
@@ -247,7 +248,25 @@ export async function handleSubscribe(body: unknown) {
     });
   }
 
+  // Confirm only a new subscriber or a new intent, so repeat submits can't be used to spam an inbox.
+  if (!existing || (signal && !existing.signals.includes(signal))) {
+    const intent = await signupIntent(data.source, signal);
+    const result = await sendSignupConfirmationEmail(data.email, intent, unsubscribeUrl(data.email));
+    if (!result.ok) console.error(`[subscribe] confirmation email failed: ${result.error}`);
+  }
+
   return { status: 200 as const, body: ok({ id: subscriber.id, email: subscriber.email }) };
+}
+
+async function signupIntent(source: string | undefined, signal: string | undefined): Promise<SignupIntent> {
+  const [kind, slug] = signal?.split(":") ?? [];
+  const platformName =
+    slug && slug !== "all"
+      ? (await prisma.gigPlatform.findUnique({ where: { slug }, select: { name: true } }))?.name
+      : undefined;
+  if (kind === "prep-waitlist" || source === "prep-waitlist") return { kind: "prep-waitlist", platformName };
+  if (kind === "approval-alert" || source?.includes("approval-alert")) return { kind: "approval-alert", platformName };
+  return { kind: "digest" };
 }
 
 export async function handleIngest(authHeader: string | undefined, cronSecretHeader: string | undefined) {

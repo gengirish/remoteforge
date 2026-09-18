@@ -84,6 +84,39 @@ export async function sendJobDigestEmail(
   );
 }
 
+export type SignupIntent =
+  | { kind: "approval-alert"; platformName?: string }
+  | { kind: "prep-waitlist"; platformName?: string }
+  | { kind: "digest" };
+
+export async function sendSignupConfirmationEmail(
+  to: string,
+  intent: SignupIntent,
+  unsubscribeUrl?: string,
+): Promise<SendResult> {
+  let subject: string;
+  let intro: string;
+  if (intent.kind === "approval-alert") {
+    const target = intent.platformName ?? "an AI training platform";
+    subject = `You'll hear when ${intent.platformName ?? "a platform"} opens onboarding for India`;
+    intro = `Thanks for signing up. We'll email you as soon as ${target} opens onboarding to applicants from India.`;
+  } else if (intent.kind === "prep-waitlist") {
+    const pack = intent.platformName ? `${intent.platformName} assessment prep pack` : "assessment prep packs";
+    subject = `You're on the waitlist for the ${pack}`;
+    intro = `Thanks for joining the waitlist. We'll email you when the ${pack} ${intent.platformName ? "is" : "are"} ready, before anyone else hears about ${intent.platformName ? "it" : "them"}.`;
+  } else {
+    subject = "You're subscribed to RemoteForge";
+    intro = "Thanks for subscribing. Your first digest of remote jobs and AI gig platforms open to India arrives on Monday.";
+  }
+
+  return sendEmail(
+    to,
+    subject,
+    `${intro}\n\nIn the meantime, browse AI gig platforms open to India: ${appUrl()}/ai-gigs\n\n— RemoteForge`,
+    unsubscribeUrl,
+  );
+}
+
 export async function sendGigDigestEmail(
   to: string,
   gigs: DigestGig[],
