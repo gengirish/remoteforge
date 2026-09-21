@@ -14,6 +14,7 @@ import {
   gigEarnings,
   gigs,
   incomeReport,
+  internalStats,
   jobs,
   salaryByRole,
   salaryRoles,
@@ -26,6 +27,8 @@ const E164_RE = /^\+[1-9]\d{7,14}$/;
 
 /** @type {{ method: string; path: string; body: unknown; at: string }[]} */
 let requests = [];
+/** email -> signals, so a repeat signup gets alreadySubscribed like the real API. */
+const subscribers = new Map();
 
 const ok = (data) => ({ status: 200, body: { success: true, data } });
 const fail = (status, error) => ({ status, body: { success: false, error } });
@@ -110,6 +113,8 @@ function handleGet(path, q) {
   if (path === "/api/community/wins") return ok(wins);
   if (path === "/api/community/income-report") return ok(incomeReport);
 
+  if (path === "/api/internal/stats") return ok(internalStats);
+
   if (path === "/__e2e/requests") return { status: 200, body: requests };
   return fail(404, "Not found");
 }
@@ -128,7 +133,13 @@ function handleWrite(method, path, body) {
     if (typeof email !== "string" || !EMAIL_RE.test(email) || (phone !== undefined && !E164_RE.test(phone))) {
       return fail(400, "Enter a valid email and a WhatsApp number like +919876543210");
     }
-    return ok({ id: `sub_${requests.length}`, email });
+    // Mirrors handleSubscribe: only a new address or a new signal counts as a fresh signup.
+    const signals = subscribers.get(email);
+    const signal = body?.signal;
+    const alreadySubscribed = !!signals && !(signal && !signals.has(signal));
+    if (!signals) subscribers.set(email, new Set(signal ? [signal] : []));
+    else if (signal) signals.add(signal);
+    return ok({ id: `sub_${requests.length}`, email, alreadySubscribed });
   }
   if (path === "/api/salary") {
     if (!body?.role || !body?.yearsExp || !body?.salaryUsd) return fail(400, "Invalid salary report");

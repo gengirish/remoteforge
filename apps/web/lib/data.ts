@@ -84,6 +84,12 @@ export async function fetchCompaniesHiringIndia() {
 type InternalStats = {
   clicks: { totalJobClicks: number; totalGigClicks: number; jobClicksLast7: number; gigClicksLast7: number };
   subscribers: number;
+  intents: {
+    prepWaitlist: number;
+    approvalAlerts: number;
+    /** Per-platform counts, e.g. { signal: "prep-waitlist:outlier-ai", count: 12 }. */
+    bySignal: { signal: string; count: number }[];
+  };
   featuredSlots: { jobTitle: string; company: string; expiresAt: string; amountPaise: number }[];
   topJobs: { jobId: string; _count: { id: number } }[];
   topGigPlatforms: { platformId: string; _count: { id: number } }[];

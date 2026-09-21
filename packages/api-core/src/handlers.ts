@@ -249,13 +249,15 @@ export async function handleSubscribe(body: unknown) {
   }
 
   // Confirm only a new subscriber or a new intent, so repeat submits can't be used to spam an inbox.
-  if (!existing || (signal && !existing.signals.includes(signal))) {
+  // The form needs to know which happened, or it promises an email that never comes.
+  const alreadySubscribed = !!existing && !(signal && !existing.signals.includes(signal));
+  if (!alreadySubscribed) {
     const intent = await signupIntent(data.source, signal);
     const result = await sendSignupConfirmationEmail(data.email, intent, unsubscribeUrl(data.email));
     if (!result.ok) console.error(`[subscribe] confirmation email failed: ${result.error}`);
   }
 
-  return { status: 200 as const, body: ok({ id: subscriber.id, email: subscriber.email }) };
+  return { status: 200 as const, body: ok({ id: subscriber.id, email: subscriber.email, alreadySubscribed }) };
 }
 
 async function signupIntent(source: string | undefined, signal: string | undefined): Promise<SignupIntent> {
@@ -722,6 +724,8 @@ export async function handleInternalStats(internalKey: string | undefined, confi
     uniqueGigIps7d,
     botJobClicks7d,
     botGigClicks7d,
+    intentTotals,
+    signalCounts,
   ] = await Promise.all([
     prisma.jobClick.count({ where: clean }),
     prisma.gigClick.count({ where: clean }),
@@ -750,6 +754,18 @@ export async function handleInternalStats(internalKey: string | undefined, confi
     prisma.gigClick.groupBy({ by: ["ipHash"], where: { ...clean7d, ipHash: { not: null } } }),
     prisma.jobClick.count({ where: { isBot: true, createdAt: { gte: sevenDaysAgo } } }),
     prisma.gigClick.count({ where: { isBot: true, createdAt: { gte: sevenDaysAgo } } }),
+    // A guide signup keeps source = "guide-{slug}", so intent has to be read from source OR signals.
+    prisma.$queryRaw<[{ prepWaitlist: number; approvalAlerts: number }]>`
+      SELECT
+        (count(*) FILTER (WHERE source = 'prep-waitlist'
+          OR EXISTS (SELECT 1 FROM unnest(signals) s WHERE s LIKE 'prep-waitlist:%')))::int AS "prepWaitlist",
+        (count(*) FILTER (WHERE source LIKE '%approval-alert%'
+          OR EXISTS (SELECT 1 FROM unnest(signals) s WHERE s LIKE 'approval-alert:%')))::int AS "approvalAlerts"
+      FROM "Subscriber"`,
+    prisma.$queryRaw<{ signal: string; count: number }[]>`
+      SELECT s AS signal, count(*)::int AS count
+      FROM "Subscriber", unnest(signals) s
+      GROUP BY s ORDER BY count DESC, s`,
   ]);
 
   return {
@@ -765,6 +781,7 @@ export async function handleInternalStats(internalKey: string | undefined, confi
         botClicks7d: botJobClicks7d + botGigClicks7d,
       },
       subscribers: subscriberCount,
+      intents: { ...intentTotals[0], bySignal: signalCounts },
       featuredSlots: featuredSlots.map((s) => ({
         jobTitle: s.job.title,
         company: s.job.company,

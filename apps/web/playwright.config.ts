@@ -25,6 +25,8 @@ const webEnv = {
   // back to USD_TO_INR_RATE instead of opening a connection to a real database.
   DATABASE_URL: "e2e-no-database",
   USD_TO_INR_RATE: "84",
+  // Password for the /internal basic-auth gate (e2e/internal.spec.ts).
+  REMOTEFORGE_INTERNAL_KEY: "e2e-internal-key",
   NEXT_TELEMETRY_DISABLED: "1",
 };
 

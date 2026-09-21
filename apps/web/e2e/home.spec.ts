@@ -51,6 +51,21 @@ test.describe("home", () => {
     expect(req.body.source).toBe("prep-waitlist");
   });
 
+  test("repeat signup says already subscribed instead of promising an email", async ({ page }) => {
+    const email = uniqueEmail("home-repeat");
+    const prepForm = () => page.locator("section", { hasText: "Assessment prep packs" }).locator("form");
+
+    await page.goto("/");
+    await prepForm().getByLabel("Email address").fill(email);
+    await prepForm().getByRole("button", { name: "Join the prep waitlist" }).click();
+    await expect(prepForm().getByRole("status")).toHaveText("You're subscribed! Check your inbox.");
+
+    await page.reload();
+    await prepForm().getByLabel("Email address").fill(email);
+    await prepForm().getByRole("button", { name: "Join the prep waitlist" }).click();
+    await expect(prepForm().getByRole("status")).toHaveText("You're already subscribed with this email.");
+  });
+
   test("shows the API error when the phone number is rejected", async ({ page }) => {
     await page.goto("/");
     const form = page.locator("section", { hasText: "Know when a platform opens onboarding" }).locator("form");

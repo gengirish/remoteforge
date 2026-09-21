@@ -45,7 +45,7 @@ export function EmailCapture({
     // The API expects E.164 (+919876543210); people type "+91 98765 43210".
     const normalizedPhone = phone.replace(/[\s()-]/g, "");
 
-    let json: { success?: boolean; error?: string } = {};
+    let json: { success?: boolean; error?: string; data?: { alreadySubscribed?: boolean } } = {};
     try {
       const res = await fetch(`${getPublicApiUrl()}/api/subscribe`, {
         method: "POST",
@@ -66,7 +66,12 @@ export function EmailCapture({
 
     if (json.success) {
       setStatus("done");
-      setMessage("You're subscribed! Check your inbox.");
+      // The API only emails a new address or a new intent, so don't promise one otherwise.
+      setMessage(
+        json.data?.alreadySubscribed
+          ? "You're already subscribed with this email."
+          : "You're subscribed! Check your inbox.",
+      );
     } else {
       setStatus("error");
       setMessage(json.error ?? "Something went wrong");

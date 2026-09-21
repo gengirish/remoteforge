@@ -251,3 +251,19 @@ export function gigEarnings(slug) {
     taskBreakdown: [{ taskType: "rlhf", median: 650, count: 3 }],
   };
 }
+
+export const internalStats = {
+  clicks: { totalJobClicks: 40, totalGigClicks: 25, jobClicksLast7: 8, gigClicksLast7: 5 },
+  subscribers: 57,
+  intents: {
+    prepWaitlist: 23,
+    approvalAlerts: 14,
+    bySignal: [
+      { signal: "prep-waitlist:outlier-ai", count: 11 },
+      { signal: "approval-alert:mercor", count: 9 },
+    ],
+  },
+  featuredSlots: [],
+  topJobs: [],
+  topGigPlatforms: [],
+};

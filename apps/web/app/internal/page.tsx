@@ -40,6 +40,38 @@ export default async function InternalStatsPage() {
         />
       </div>
 
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <StatCard label="Prep Waitlist" value={stats.intents.prepWaitlist.toLocaleString()} />
+        <StatCard label="Approval Alerts" value={stats.intents.approvalAlerts.toLocaleString()} />
+      </div>
+
+      {stats.intents.bySignal.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-semibold">Interest by Platform</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-muted-foreground">
+                <th className="pb-2 font-normal">Platform</th>
+                <th className="pb-2 font-normal">Intent</th>
+                <th className="pb-2 text-right font-normal">Subscribers</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.intents.bySignal.map(({ signal, count }) => {
+                const [intent, slug] = signal.split(":");
+                return (
+                  <tr key={signal} className="border-b border-border last:border-0">
+                    <td className="py-2 font-medium">{slug}</td>
+                    <td className="py-2 text-muted-foreground">{intent}</td>
+                    <td className="py-2 text-right font-medium">{count.toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
         <section>
           <h2 className="mb-3 text-lg font-semibold">Click Breakdown</h2>
