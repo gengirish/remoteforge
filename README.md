@@ -96,14 +96,14 @@ Core routes (the full list, ~60 routes, is in `apps/api/src/server.ts`):
 | `/api/jobs` | GET | Paginated jobs |
 | `/api/jobs/by-slug/:slug` | GET | Job detail (`?full=true` for the whole row) |
 | `/api/gigs`, `/api/gigs/by-slug/:slug` | GET | Gig platforms |
-| `/api/subscribe` | POST | Signup; `source` plus optional `signal` (`approval-alert:{slug}` / `prep-waitlist:{slug}`) |
+| `/api/subscribe` | POST | Signup; `source` plus optional `signal` (`approval-alert:{slug}` / `prep-waitlist:{slug}`). Confirms by email once; repeats return `alreadySubscribed` |
 | `/api/unsubscribe` | GET/POST | GET renders a confirm page (no side effects); POST deletes the subscriber |
 | `/api/jobs/ingest` | GET/POST | Cron — ingestion (runs inline) |
 | `/api/cron/digest` | GET | Cron — email digest (`?to=` sends to one address) |
 | `/api/featured/create-order` | POST | Razorpay checkout |
 | `/api/webhooks/razorpay` | POST | Payment webhook |
 | `/go/:id` | GET | Affiliate redirect; logs the click, flagging bots and repeats |
-| `/api/internal/*` | — | Admin, requires `X-Internal-Key` |
+| `/api/internal/*` | — | Admin, requires `X-Internal-Key`. `/api/internal/stats` feeds the owner page `/internal` (basic auth, see `DEPLOY.md` §3) |
 
 Signed-in routes (`/api/user/*`, `/api/applications`, `/api/referral/*`, …) read the Clerk session token from `Authorization: Bearer`.
 

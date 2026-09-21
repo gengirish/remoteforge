@@ -59,13 +59,13 @@ Editorial content is typed TypeScript in `apps/web/content/`, not the DB: `guide
 
 ### Subscribers and click metrics
 
-`POST /api/subscribe` takes a `source` (first touch, kept on later signups) and an optional `signal` (`approval-alert:{slug}` or `prep-waitlist:{slug}`) appended to `Subscriber.signals`. A new signup from a guide keeps `source = "guide-{slug}"`, so count the prep waitlist as `source = 'prep-waitlist'` **or** any `prep-waitlist:*` signal. `/go/:id` stores every click but flags crawlers (`isBot`) and same-IP repeats (`isDuplicate`); every metric query must filter both to false. Metrics are read by hand, never on a timer (see the cost constraint).
+`POST /api/subscribe` takes a `source` (first touch, kept on later signups) and an optional `signal` (`approval-alert:{slug}` or `prep-waitlist:{slug}`) appended to `Subscriber.signals`. A new signup from a guide keeps `source = "guide-{slug}"`, so count the prep waitlist as `source = 'prep-waitlist'` **or** any `prep-waitlist:*` signal. A confirmation email goes out only for a new address or a new signal; otherwise the response carries `alreadySubscribed: true` and the form says so rather than promising an email. `/go/:id` stores every click but flags crawlers (`isBot`) and same-IP repeats (`isDuplicate`); every metric query must filter both to false. Metrics are read by hand, never on a timer (see the cost constraint): the owner page is `/internal` (fed by `handleInternalStats`), showing subscribers, prep-waitlist and approval-alert totals, and interest per platform.
 
 ### Auth and trust boundaries
 
 - **Clerk is optional and feature-flagged.** `apps/web/lib/clerk-config.ts` exports `isClerkEnabled` (true only when a publishable key was present at build). `middleware.ts` and layouts branch on it, so the app must build and run with Clerk absent.
 - The web sends the Clerk **session token** as `Authorization: Bearer` (`getToken()` from `auth()` / `useAuth()`), and `clerkUserId()` in `apps/api/src/server.ts` verifies it with `@clerk/backend`. Never pass a user id from the client. Without a valid token, or with `CLERK_SECRET_KEY` unset on Fly, every user route sees an anonymous request.
-- Admin/internal routes require `X-Internal-Key` (`REMOTEFORGE_INTERNAL_KEY`); cron routes accept `Authorization: Bearer` or `X-Cron-Secret` via `authorizeCron()` against `CRON_SECRET`.
+- Admin/internal routes require `X-Internal-Key` (`REMOTEFORGE_INTERNAL_KEY`). The web page `/internal` fetches with that key server-side, so `middleware.ts` puts it behind HTTP basic auth using the same key as the password, independent of Clerk. Any page that fetches with the internal key needs that gate; cron routes accept `Authorization: Bearer` or `X-Cron-Secret` via `authorizeCron()` against `CRON_SECRET`.
 
 ### Database
 

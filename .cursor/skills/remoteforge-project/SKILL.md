@@ -40,7 +40,8 @@ New endpoint = `handleThing()` in `packages/api-core/src/handlers.ts` → export
 | `/guides/[slug]` | web | Approval SEO guides from `apps/web/content/guides/` |
 | `/jobs`, `/jobs/[slug]`, `/jobs/tag/[tag]` | web | Remote job listings (ISR, `revalidate = 3600`) |
 | `/go/:id` | API | Affiliate redirect; logs clicks, flags `isBot` / `isDuplicate` |
-| `/api/subscribe` | API | Signup with `source` + optional `signal` |
+| `/api/subscribe` | API | Signup with `source` + optional `signal`; returns `alreadySubscribed` |
+| `/internal` | web | Owner stats: clicks, subscribers, waitlist and alert interest per platform. Basic auth, password = `REMOTEFORGE_INTERNAL_KEY` |
 | `/api/jobs/ingest` | API | Cron (Bearer `CRON_SECRET`) |
 | `/api/cron/digest` | API | Weekly digest via AgentMail (`?to=` for one address) |
 | `/api/webhooks/razorpay` | API | Payment webhook |

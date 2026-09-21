@@ -42,7 +42,7 @@ pnpm deploy:api      # manual deploy; CI also deploys automatically, see below
 | `CORS_ORIGINS` | yes | browsers are blocked |
 | `CLERK_SECRET_KEY` | when Clerk is on | signed-in routes treat every request as anonymous; the API verifies the Clerk session token sent as `Authorization: Bearer` |
 | `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX_ID` | for email | digest runs but sends nothing (see §5) |
-| `REMOTEFORGE_INTERNAL_KEY` | for admin | `/api/internal/*` returns 401, so `/admin/settings` can't load or save (see §3) |
+| `REMOTEFORGE_INTERNAL_KEY` | for admin | `/api/internal/*` returns 401, so `/admin/settings` can't load or save and `/internal` shows no stats (see §3) |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | for payments | checkout and the payment webhook fail (see §8) |
 | `UNSUBSCRIBE_SECRET`, `API_PUBLIC_URL` | no | see §5 Unsubscribe |
 | `NEXT_PUBLIC_APP_URL` | no | email links and referral share links default to `https://remoteforge.intelliforge.tech` |
@@ -87,13 +87,14 @@ curl https://remoteforge-api.fly.dev/api/home
 | `GET /api/jobs/by-slug/:slug?full=true` | Job detail |
 | `GET /api/gigs` | Gig platforms |
 | `GET /go/:id` | Affiliate redirect; flags crawler (`isBot`) and repeat (`isDuplicate`) clicks |
-| `POST /api/subscribe` | Signup with `source` and optional `signal` |
+| `POST /api/subscribe` | Signup with `source` and optional `signal`; returns `alreadySubscribed` |
 | `GET /api/unsubscribe` | Unsubscribe confirm page; no side effects |
 | `POST /api/unsubscribe` | Deletes the subscriber |
 | `POST /api/featured/create-order` | Razorpay |
 | `POST /api/webhooks/razorpay` | Payment webhook |
 | `GET`/`POST /api/jobs/ingest` | Cron — job ingestion |
 | `GET /api/cron/digest` | Cron — email digest (`?to=` for one address) |
+| `GET /api/internal/stats` | Admin — clicks, subscribers, waitlist and alert interest (read by `/internal`) |
 | `GET /api/internal/affiliate-settings` | Admin — list affiliate config |
 | `PUT /api/internal/affiliate-settings` | Admin — save job board affiliate tags |
 | `PATCH /api/internal/gig-platforms/:id/affiliate` | Admin — save gig referral URLs |
@@ -115,6 +116,10 @@ pnpm deploy:web      # or: vercel --prod
 
 **Root directory in Vercel dashboard:** `apps/web`. Vercel also deploys every push to `master`.
 
+A new or changed env var only reaches the live site after a redeploy (`vercel redeploy <production-url> --target production`, or push a commit).
+
+**Git Bash with Anaconda on PATH:** `vercel` fails with `Cannot find module 'C:\Users\...\anaconda3\Library\c\nvm4w\nodejs\node_modules\vercel\dist\vc.js'`. Anaconda's `cygpath` shadows Git's and mangles the path the npm shim builds. Run the CLI from PowerShell, call it directly with `node /c/nvm4w/nodejs/node_modules/vercel/dist/vc.js ...`, or put `export PATH="/usr/bin:$PATH"` in `~/.bashrc`.
+
 ### Web env vars
 
 ```env
@@ -123,7 +128,7 @@ API_URL=https://remoteforge-api.fly.dev
 NEXT_PUBLIC_APP_URL=https://remoteforge.intelliforge.tech
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=   # optional
 CLERK_SECRET_KEY=                    # optional; set the same key on Fly or signed-in API calls are anonymous
-REMOTEFORGE_INTERNAL_KEY=            # same as Fly API — required for admin settings
+REMOTEFORGE_INTERNAL_KEY=            # same as Fly API — admin settings, and the password for /internal
 ADMIN_SETTINGS_TOKEN=                # passphrase for /admin/settings UI
 NEXT_PUBLIC_FORGEAHEAD_URL=https://forgeahead.intelliforge.tech
 NEXT_PUBLIC_VETTD_URL=https://www.vettd-app.com
@@ -144,6 +149,20 @@ Configure referral and affiliate links at **`/admin/settings`** (not indexed).
 **AI gig platforms** (Outlier, Appen, etc.): per-platform referral URL, affiliate URL, and reward note.
 
 Env vars (`AFFILIATE_*`) still work as fallback until you save a value in the admin UI.
+
+### Owner stats (`/internal`)
+
+`https://remoteforge.intelliforge.tech/internal` shows human clicks, total subscribers, the **prep waitlist** and **approval alert** totals, and interest per platform (one row per `Subscriber.signals` value, e.g. `outlier-ai · prep-waitlist`). Waitlist totals count `source = 'prep-waitlist'` or any `prep-waitlist:*` signal, so guide signups are included.
+
+The page is behind HTTP basic auth in `apps/web/middleware.ts`: any username, `REMOTEFORGE_INTERNAL_KEY` as the password. With the key unset on Vercel the page stays locked; with it unset on Fly the page loads but shows "Unable to load stats". Setup:
+
+```bash
+KEY=$(openssl rand -hex 32); echo $KEY     # this is your password
+fly secrets set REMOTEFORGE_INTERNAL_KEY=$KEY -a remoteforge-api
+vercel env add REMOTEFORGE_INTERNAL_KEY production   # same value, then redeploy the web
+```
+
+Each load queries Neon and wakes it for ~5 minutes. Open it by hand; never point a monitor or cron at it.
 
 ## 4. Cron (GitHub Actions)
 
@@ -213,6 +232,10 @@ fly secrets set AGENTMAIL_API_KEY=am_us_... AGENTMAIL_INBOX_ID=alerts@intellifor
 ```
 
 Set a key from your own shell, not a chat or a committed file.
+
+### Signup confirmation
+
+`POST /api/subscribe` emails a confirmation only for a new address, or an existing one with a new `signal` (joining another waitlist or alert). Otherwise it sends nothing and returns `alreadySubscribed: true`, and the form says "You're already subscribed with this email." A failed send never fails the signup; it logs `[subscribe] confirmation email failed: ...` on Fly. To test the full path, sign up on the live site with a fresh plus-address (`you+rf1@gmail.com`); reusing an address sends nothing.
 
 ### Verifying email
 
