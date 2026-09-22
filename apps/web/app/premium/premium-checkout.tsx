@@ -49,7 +49,7 @@ function PremiumCheckoutInner() {
           window.location.href = "/premium/success";
         },
         prefill: {},
-        theme: { color: "#6366f1" },
+        theme: { color: "#7065f0" },
       });
       rzp.open();
     } catch {

@@ -18,15 +18,15 @@ export function EmployerUpsellBanner({ job }: VettdUpsellBannerProps) {
     }).toString();
 
   return (
-    <aside className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-      <p className="text-sm font-medium text-amber-900">
+    <aside className="rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/15 p-4">
+      <p className="text-sm font-medium text-amber-900 dark:text-amber-300">
         Hiring for this role? Screen 200 applicants in 45 minutes.
       </p>
       <a
         href={signupLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-2 inline-block text-sm font-medium text-amber-800 hover:underline"
+        className="mt-2 inline-block text-sm font-medium text-amber-800 dark:text-amber-300 hover:underline"
       >
         Start screening with Vettd →
       </a>

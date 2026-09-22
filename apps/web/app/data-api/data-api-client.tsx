@@ -42,25 +42,25 @@ export function DataApiClient({ apiUrl }: { apiUrl: string }) {
 
   if (apiKey) {
     return (
-      <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-6">
-        <p className="font-semibold text-green-900">Your API key is ready!</p>
-        <p className="mt-1 text-sm text-green-800">
+      <div className="mt-6 rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/15 p-6">
+        <p className="font-semibold text-green-900 dark:text-green-300">Your API key is ready!</p>
+        <p className="mt-1 text-sm text-green-800 dark:text-green-300">
           Save this key — it will not be shown again.
         </p>
         <div className="mt-4 flex items-center gap-2">
-          <code className="flex-1 overflow-x-auto rounded-md border border-green-200 bg-white px-3 py-2 text-sm font-mono">
+          <code className="flex-1 overflow-x-auto rounded-md border border-green-200 dark:border-green-500/30 bg-card px-3 py-2 text-sm font-mono">
             {apiKey}
           </code>
           <button
             onClick={copy}
-            className="shrink-0 rounded-md border border-green-300 bg-white px-3 py-2 text-sm hover:bg-green-50"
+            className="shrink-0 rounded-md border border-green-300 bg-card px-3 py-2 text-sm hover:bg-green-50"
           >
             {copied ? "Copied!" : "Copy"}
           </button>
         </div>
-        <p className="mt-4 text-sm text-green-800">
+        <p className="mt-4 text-sm text-green-800 dark:text-green-300">
           Test it:{" "}
-          <code className="rounded bg-green-100 px-1 text-xs">
+          <code className="rounded bg-green-100 dark:bg-green-500/15 px-1 text-xs">
             curl {apiUrl}/api/v2/skills -H &quot;Authorization: Bearer {apiKey}&quot;
           </code>
         </p>

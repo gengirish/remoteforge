@@ -102,7 +102,7 @@ function TalentReportClientInner({
 
   if (!report) {
     return (
-      <div className="rounded-xl bg-white p-8 text-center text-gray-500 shadow-sm">
+      <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-sm">
         Report unavailable — please try again later.
       </div>
     );
@@ -113,55 +113,55 @@ function TalentReportClientInner({
   return (
     <div className="space-y-6">
       {/* Top Skills */}
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <h2 className="mb-4 font-semibold text-gray-900">Top skills in demand (India remote)</h2>
+      <section className="rounded-2xl bg-card p-6 shadow-sm">
+        <h2 className="mb-4 font-semibold text-foreground">Top skills in demand (India remote)</h2>
         <div className="space-y-2">
           {report.topSkills.slice(0, isSubscriber ? 20 : 5).map((s) => (
             <div key={s.skill} className="flex items-center gap-3">
-              <div className="w-24 text-sm font-medium text-gray-700">{s.skill}</div>
-              <div className="flex-1 overflow-hidden rounded-full bg-gray-100">
+              <div className="w-24 text-sm font-medium text-muted-foreground">{s.skill}</div>
+              <div className="flex-1 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-2 rounded-full bg-indigo-500"
+                  className="h-2 rounded-full bg-primary"
                   style={{ width: `${(s.count / maxSkillCount) * 100}%` }}
                 />
               </div>
-              <div className="w-12 text-right text-xs text-gray-500">{s.count}</div>
+              <div className="w-12 text-right text-xs text-muted-foreground">{s.count}</div>
             </div>
           ))}
         </div>
         {!isSubscriber && report.topSkills.length > 5 && (
-          <p className="mt-3 text-sm text-gray-400">
+          <p className="mt-3 text-sm text-muted-foreground">
             + {report.topSkills.length - 5} more skills — upgrade to unlock
           </p>
         )}
       </section>
 
       {/* Salary by Role (gated) */}
-      <section className={`rounded-2xl p-6 shadow-sm ${isSubscriber ? "bg-white" : "bg-gray-50"}`}>
-        <h2 className="mb-4 font-semibold text-gray-900">Salary benchmarks by role</h2>
+      <section className={`rounded-2xl p-6 shadow-sm ${isSubscriber ? "bg-card" : "bg-muted/50"}`}>
+        <h2 className="mb-4 font-semibold text-foreground">Salary benchmarks by role</h2>
         {isSubscriber ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="pb-3 pr-4 font-medium">Role</th>
                   <th className="pb-3 pr-4 font-medium">Avg salary (USD)</th>
                   <th className="pb-3 font-medium">Reports</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {report.salaryByRole.map((r) => (
                   <tr key={r.roleSlug}>
-                    <td className="py-3 pr-4 font-medium text-gray-900">{r.role}</td>
-                    <td className="py-3 pr-4 text-gray-700">
+                    <td className="py-3 pr-4 font-medium text-foreground">{r.role}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">
                       ${Math.round(r._avg.salaryUsd ?? 0).toLocaleString()}
                     </td>
-                    <td className="py-3 text-gray-500">{r._count.id}</td>
+                    <td className="py-3 text-muted-foreground">{r._count.id}</td>
                   </tr>
                 ))}
                 {report.salaryByRole.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="py-6 text-center text-gray-400">
+                    <td colSpan={3} className="py-6 text-center text-muted-foreground">
                       No salary data yet.
                     </td>
                   </tr>
@@ -170,15 +170,15 @@ function TalentReportClientInner({
             </table>
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-indigo-300 bg-indigo-50 p-6 text-center">
-            <p className="mb-1 font-medium text-gray-800">Upgrade to see salary benchmarks</p>
-            <p className="mb-4 text-sm text-gray-500">
+          <div className="rounded-xl border border-dashed border-primary/30 bg-primary/10 p-6 text-center">
+            <p className="mb-1 font-medium text-foreground">Upgrade to see salary benchmarks</p>
+            <p className="mb-4 text-sm text-muted-foreground">
               Know exactly what India-based engineers, designers, and PMs expect.
             </p>
             <button
               onClick={handleUpgrade}
               disabled={upgrading}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+              className="btn-brand rounded-full px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {upgrading ? "Opening payment…" : "Upgrade — ₹2,999/month"}
             </button>
@@ -189,27 +189,27 @@ function TalentReportClientInner({
 
       {/* Company Comparison (gated) */}
       {isSubscriber && report.companyComparison.length > 0 && (
-        <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="mb-4 font-semibold text-gray-900">Companies hiring from India</h2>
+        <section className="rounded-2xl bg-card p-6 shadow-sm">
+          <h2 className="mb-4 font-semibold text-foreground">Companies hiring from India</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="pb-3 pr-4 font-medium">Company</th>
                   <th className="pb-3 pr-4 font-medium">India accept rate</th>
                   <th className="pb-3 pr-4 font-medium">Jobs posted</th>
                   <th className="pb-3 font-medium">Avg response (days)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {report.companyComparison.map((c) => (
                   <tr key={c.name}>
-                    <td className="py-3 pr-4 font-medium text-gray-900">{c.name}</td>
-                    <td className="py-3 pr-4 text-gray-700">
+                    <td className="py-3 pr-4 font-medium text-foreground">{c.name}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">
                       {Math.round(c.indiaAcceptRate * 100)}%
                     </td>
-                    <td className="py-3 pr-4 text-gray-700">{c.totalJobsPosted}</td>
-                    <td className="py-3 text-gray-700">{c.avgResponseDays ?? "—"}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{c.totalJobsPosted}</td>
+                    <td className="py-3 text-muted-foreground">{c.avgResponseDays ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -218,7 +218,7 @@ function TalentReportClientInner({
         </section>
       )}
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-muted-foreground">
         Report generated {new Date(report.generatedAt).toLocaleString("en-IN")}
       </p>
     </div>

@@ -34,7 +34,7 @@ export function SiteHeaderInner({ userId, clerkEnabled }: SiteHeaderInnerProps) 
           href="/"
           className="group flex items-center gap-2 font-display text-xl font-bold tracking-tight"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm text-primary-foreground shadow-sm transition-transform group-hover:scale-105">
+          <span className="btn-brand flex h-8 w-8 items-center justify-center rounded-lg text-sm text-primary-foreground transition-transform group-hover:scale-105">
             RF
           </span>
           <span>
@@ -48,7 +48,7 @@ export function SiteHeaderInner({ userId, clerkEnabled }: SiteHeaderInnerProps) 
               key={href}
               href={href}
               className={cn(
-                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                 isActive(href)
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",

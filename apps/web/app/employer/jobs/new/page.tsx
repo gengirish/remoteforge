@@ -13,15 +13,15 @@ export default async function NewJobPage() {
   if (!userId) redirect("/employer/onboard");
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-12">
+    <main className="min-h-screen bg-muted/50 px-4 py-12">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Post a new job</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Post a new job</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Jobs are listed for 30 days and appear to India-based remote workers.
           </p>
         </div>
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
+        <div className="rounded-2xl bg-card p-8 shadow-sm">
           <NewJobClient />
         </div>
       </div>

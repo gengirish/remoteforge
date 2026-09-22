@@ -24,10 +24,10 @@ export const revalidate = 3600;
 const BASE_URL = siteUrl;
 
 const TYPE_COLORS: Record<string, string> = {
-  rlhf: "bg-violet-100 text-violet-800",
-  annotation: "bg-sky-100 text-sky-800",
-  evaluator: "bg-teal-100 text-teal-800",
-  multilingual: "bg-amber-100 text-amber-800",
+  rlhf: "bg-violet-100 dark:bg-violet-500/15 text-violet-800 dark:text-violet-300",
+  annotation: "bg-sky-100 dark:bg-sky-500/15 text-sky-800 dark:text-sky-300",
+  evaluator: "bg-teal-100 dark:bg-teal-500/15 text-teal-800 dark:text-teal-300",
+  multilingual: "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300",
   microtask: "bg-secondary text-secondary-foreground",
 };
 
@@ -186,7 +186,7 @@ function ProsConsGrid({
             <h3 className="font-semibold">{p.name}</h3>
             <div className="mt-4 space-y-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
                   Pros
                 </p>
                 <ul className="mt-2 space-y-1.5">
@@ -202,7 +202,7 @@ function ProsConsGrid({
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                <p className="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">
                   Cons
                 </p>
                 <ul className="mt-2 space-y-1.5">

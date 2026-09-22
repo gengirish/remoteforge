@@ -10,9 +10,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  clicked: "bg-gray-100 text-gray-600",
-  signed_up: "bg-blue-100 text-blue-800",
-  converted: "bg-green-100 text-green-800",
+  clicked: "bg-muted text-muted-foreground",
+  signed_up: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300",
+  converted: "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300",
 };
 
 export function ReferClient({ data }: { data: ReferralData | null }) {

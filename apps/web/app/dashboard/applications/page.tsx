@@ -7,11 +7,11 @@ export const metadata = { title: "My Applications | RemoteForge" };
 export const dynamic = "force-dynamic";
 
 const STATUS_COLORS: Record<string, string> = {
-  applied: "bg-blue-100 text-blue-800",
-  interviewing: "bg-purple-100 text-purple-800",
-  offered: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
-  ghosted: "bg-gray-100 text-gray-600",
+  applied: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300",
+  interviewing: "bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300",
+  offered: "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300",
+  rejected: "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300",
+  ghosted: "bg-muted text-muted-foreground",
 };
 
 export default async function ApplicationsPage() {

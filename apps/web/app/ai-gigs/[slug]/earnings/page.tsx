@@ -84,7 +84,7 @@ export default async function GigEarningsPage({ params }: Props) {
             </div>
           )}
 
-          <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="mt-8 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/15 p-4 text-sm text-amber-900 dark:text-amber-300">
             <strong>Platform-stated range:</strong>{" "}
             ₹{data.platform.payMin.toLocaleString("en-IN")}–₹{data.platform.payMax.toLocaleString("en-IN")}
             /month

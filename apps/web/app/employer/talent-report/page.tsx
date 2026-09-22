@@ -24,11 +24,11 @@ export default async function TalentReportPage() {
   if (!employer) redirect("/employer/onboard");
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-12">
+    <main className="min-h-screen bg-muted/50 px-4 py-12">
       <div className="mx-auto max-w-5xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Talent Intelligence Report</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Talent Intelligence Report</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             India remote talent landscape — updated daily from 50,000+ job listings.
           </p>
         </div>

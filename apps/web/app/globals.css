@@ -2,41 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Palette mirrors micro1.ai: a near-black #121212 canvas with white-alpha
+   surfaces, violet brand #7065f0, and a lavender #ebebf4 light variant.
+   Dark is the default (see themeInitScript in app/layout.tsx). */
 @layer base {
   :root {
-    --background: 40 33% 98%;
-    --foreground: 222 47% 11%;
+    --background: 240 29% 94%; /* #ebebf4 */
+    --foreground: 0 0% 7%; /* #121212 */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --primary: 234 89% 58%;
+    --card-foreground: 0 0% 7%;
+    --primary: 245 72% 60%; /* #7065f0, deepened for contrast on light */
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 25% 94%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 40 20% 94%;
-    --muted-foreground: 215 16% 42%;
-    --accent: 32 95% 52%;
-    --accent-foreground: 26 83% 14%;
-    --border: 40 16% 88%;
-    --ring: 234 89% 58%;
-    --radius: 0.625rem;
+    --secondary: 240 20% 90%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 240 20% 90%;
+    --muted-foreground: 240 4% 38%;
+    --accent: 240 90% 94%; /* #e2e2fd */
+    --accent-foreground: 237 45% 50%; /* #474cb8 */
+    --border: 240 14% 85%;
+    --ring: 245 82% 67%;
+    --radius: 0.75rem;
+    --brand-gradient: linear-gradient(150deg, #7065f0 0%, #474cb8 100%);
   }
 
   .dark {
     color-scheme: dark;
-    --background: 222 47% 9%;
-    --foreground: 210 40% 96%;
-    --card: 222 40% 12%;
-    --card-foreground: 210 40% 96%;
-    --primary: 234 89% 67%;
+    --background: 0 0% 7%; /* #121212 */
+    --foreground: 0 0% 92%; /* white / 90% */
+    --card: 0 0% 11%; /* white / 6% over body */
+    --card-foreground: 0 0% 92%;
+    --primary: 245 82% 67%; /* #7065f0 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 35% 16%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 222 30% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 32 95% 55%;
-    --accent-foreground: 40 33% 98%;
-    --border: 222 28% 20%;
-    --ring: 234 89% 67%;
+    --secondary: 0 0% 15%; /* white / 10% over body */
+    --secondary-foreground: 0 0% 92%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 63%; /* white / 60% */
+    --accent: 237 94% 81%; /* #9fa3fc */
+    --accent-foreground: 0 0% 7%;
+    --border: 0 0% 18%; /* white / 10-20% */
+    --ring: 237 94% 81%;
+    --brand-gradient: linear-gradient(150deg, #374bff 24%, #212d99 96%);
   }
 }
 
@@ -59,34 +64,52 @@
   h3,
   h4 {
     @apply font-display tracking-tight;
+    line-height: 1.2;
   }
 }
 
 @layer components {
   .hero-gradient {
     background:
-      radial-gradient(ellipse 80% 60% at 50% -20%, hsl(234 89% 58% / 0.12), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, hsl(32 95% 52% / 0.08), transparent),
-      radial-gradient(ellipse 50% 30% at 0% 100%, hsl(160 60% 45% / 0.06), transparent);
+      radial-gradient(ellipse 70% 55% at 50% -10%, hsl(245 82% 67% / 0.18), transparent 70%),
+      radial-gradient(ellipse 45% 35% at 90% 10%, hsl(237 94% 81% / 0.12), transparent 70%);
   }
 
   .dark .hero-gradient {
     background:
-      radial-gradient(ellipse 80% 60% at 50% -20%, hsl(234 89% 67% / 0.18), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, hsl(32 95% 55% / 0.1), transparent),
-      radial-gradient(ellipse 50% 30% at 0% 100%, hsl(160 60% 45% / 0.08), transparent);
+      radial-gradient(ellipse 70% 55% at 50% -10%, hsl(234 100% 61% / 0.28), transparent 70%),
+      radial-gradient(ellipse 45% 35% at 90% 10%, hsl(245 82% 67% / 0.14), transparent 70%),
+      linear-gradient(to bottom, hsl(0 0% 100% / 0.02), transparent);
+  }
+
+  /* micro1's primary CTA: blue-violet gradient with a soft glow. */
+  .btn-brand {
+    background-image: var(--brand-gradient);
+    box-shadow: 0 0 0 1px hsl(0 0% 100% / 0.08) inset, 0 8px 24px -8px hsl(245 82% 60% / 0.55);
+  }
+
+  .btn-brand:hover {
+    filter: brightness(1.1);
   }
 
   .card-surface {
-    @apply rounded-xl border border-border bg-card shadow-sm transition-all duration-200;
+    @apply rounded-2xl border border-border bg-card shadow-sm transition-all duration-200;
   }
 
   .card-surface:hover {
-    @apply border-primary/20 shadow-md;
+    @apply border-primary/40 shadow-md;
+  }
+
+  .dark .card-surface {
+    @apply shadow-none;
+  }
+
+  .dark .card-surface:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25), 0 12px 32px -12px hsl(var(--primary) / 0.35);
   }
 
   .page-header {
-    @apply relative overflow-hidden rounded-2xl border border-border bg-card px-6 py-8 shadow-sm sm:px-8;
+    @apply relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-8 shadow-sm sm:px-8;
   }
 
   .page-header::before {
@@ -94,9 +117,9 @@
     @apply pointer-events-none absolute inset-0 opacity-60;
     background: linear-gradient(
       135deg,
-      hsl(var(--primary) / 0.06) 0%,
-      transparent 50%,
-      hsl(var(--accent) / 0.04) 100%
+      hsl(var(--primary) / 0.12) 0%,
+      transparent 55%,
+      hsl(var(--accent) / 0.06) 100%
     );
   }
 
@@ -113,11 +136,24 @@
   }
 
   .input-field {
-    @apply flex h-11 w-full rounded-lg border border-border bg-card px-4 text-sm shadow-sm transition-shadow placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply flex h-11 w-full rounded-xl border border-border bg-card px-4 text-sm shadow-sm transition-shadow placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .dark .input-field {
+    @apply shadow-none;
   }
 }
 
 @layer utilities {
+  .text-brand-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #5b4fe6, #474cb8);
+  }
+
+  .dark .text-brand-gradient {
+    background-image: linear-gradient(90deg, #7065f0, #9fa3fc);
+  }
+
   .text-balance {
     text-wrap: balance;
   }

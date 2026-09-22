@@ -59,7 +59,7 @@ export function FeaturedCheckout({ jobId, jobTitle }: FeaturedCheckoutProps) {
         name: "RemoteForge",
         description: `Featured listing: ${jobTitle}`,
         order_id: orderId,
-        theme: { color: "#2563eb" },
+        theme: { color: "#7065f0" },
         handler: () => {
           setMessage("Payment received! Your job will be featured shortly.");
         },
@@ -87,7 +87,7 @@ export function FeaturedCheckout({ jobId, jobTitle }: FeaturedCheckoutProps) {
       >
         {loading ? "Loading..." : "Pay with Razorpay"}
       </Button>
-      {message && <p className="mt-2 text-sm text-emerald-700">{message}</p>}
+      {message && <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
     </div>
   );
 }

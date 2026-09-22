@@ -77,44 +77,44 @@ function NewJobClientInner() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Job title *</label>
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">Job title *</label>
         <input
           type="text"
           required
           minLength={3}
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="Senior Frontend Engineer"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Job description *</label>
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">Job description *</label>
         <textarea
           required
           minLength={50}
           rows={8}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="Describe the role, responsibilities, and requirements…"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Skills / Tags</label>
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">Skills / Tags</label>
         <div className="mb-2 flex flex-wrap gap-2">
           {form.tags.map((t) => (
             <span
               key={t}
-              className="flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700"
+              className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
             >
               {t}
               <button
                 type="button"
                 onClick={() => removeTag(t)}
-                className="ml-1 text-indigo-400 hover:text-indigo-700"
+                className="ml-1 text-primary hover:text-primary"
               >
                 ×
               </button>
@@ -132,7 +132,7 @@ function NewJobClientInner() {
                 addTag(tagInput);
               }
             }}
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Add a skill and press Enter"
           />
         </div>
@@ -142,7 +142,7 @@ function NewJobClientInner() {
               key={s}
               type="button"
               onClick={() => addTag(s)}
-              className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-600 hover:border-indigo-400 hover:text-indigo-600"
+              className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground hover:border-primary hover:text-primary"
             >
               + {s}
             </button>
@@ -152,36 +152,36 @@ function NewJobClientInner() {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Min salary (USD)</label>
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">Min salary (USD)</label>
           <input
             type="number"
             min="0"
             value={form.salaryMin}
             onChange={(e) => setForm({ ...form, salaryMin: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="80000"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Max salary (USD)</label>
+          <label className="mb-1 block text-sm font-medium text-muted-foreground">Max salary (USD)</label>
           <input
             type="number"
             min="0"
             value={form.salaryMax}
             onChange={(e) => setForm({ ...form, salaryMax: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="120000"
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Apply URL</label>
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">Apply URL</label>
         <input
           type="url"
           value={form.applyUrl}
           onChange={(e) => setForm({ ...form, applyUrl: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="https://jobs.company.com/apply/123"
         />
       </div>
@@ -192,9 +192,9 @@ function NewJobClientInner() {
           id="indiaFriendly"
           checked={form.indiaFriendly}
           onChange={(e) => setForm({ ...form, indiaFriendly: e.target.checked })}
-          className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+          className="h-4 w-4 rounded border-border text-primary"
         />
-        <label htmlFor="indiaFriendly" className="text-sm text-gray-700">
+        <label htmlFor="indiaFriendly" className="text-sm text-muted-foreground">
           This role is open to candidates based in India
         </label>
       </div>
@@ -204,7 +204,7 @@ function NewJobClientInner() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+        className="w-full btn-brand rounded-full py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
         {loading ? "Posting…" : "Post Job →"}
       </button>

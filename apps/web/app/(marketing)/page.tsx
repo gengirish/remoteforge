@@ -58,12 +58,13 @@ export default async function HomePage() {
       <section className="hero-gradient border-b border-border">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="animate-fade-up text-sm font-semibold uppercase tracking-wider text-primary">
+            <p className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
               For Indians breaking into AI training work
             </p>
-            <h1 className="animate-fade-up mt-4 text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl [animation-delay:80ms]">
+            <h1 className="animate-fade-up mt-6 text-balance text-4xl font-medium tracking-tight sm:text-5xl lg:text-6xl [animation-delay:80ms]">
               Get approved on AI training platforms{" "}
-              <span className="text-primary">from India</span>
+              <span className="text-brand-gradient">from India</span>
             </h1>
             <p className="animate-fade-up mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground [animation-delay:160ms]">
               Which platforms actually accept Indians, what they pay, how long approval
@@ -81,7 +82,7 @@ export default async function HomePage() {
 
             <div className="animate-fade-up mt-10 flex flex-wrap items-center justify-center gap-3 [animation-delay:320ms]">
               <span className="stat-pill">
-                <Sparkles className="h-4 w-4 text-accent" />
+                <Sparkles className="h-4 w-4 text-primary" />
                 {stats.gigCount} AI platforms reviewed
               </span>
               <span className="stat-pill">

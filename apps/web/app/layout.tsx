@@ -1,22 +1,18 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Sora, Source_Sans_3 } from "next/font/google";
+import { Outfit } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { clerkPublishableKey, isClerkEnabled } from "@/lib/clerk-config";
 import { siteDomain, siteUrl } from "@/lib/site";
 import "./globals.css";
 
-const fontDisplay = Sora({
+// Outfit is a variable font (100-900): one file serves headings and body.
+// Hierarchy comes from weight and tracking, not a second family.
+const fontSans = Outfit({
   subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const fontBody = Source_Sans_3({
-  subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-sans",
   display: "swap",
 });
 
@@ -36,7 +32,7 @@ export const metadata: Metadata = {
   },
 };
 
-const themeInitScript = `(function(){try{var k='remoteforge-theme';var s=localStorage.getItem(k);var d=s==='dark'||(s!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+const themeInitScript = `(function(){try{var k='remoteforge-theme';var d=true;try{d=localStorage.getItem(k)!=='light';}catch(e){}if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -44,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const body = (
-    <div className={`${fontDisplay.variable} ${fontBody.variable} font-sans`}>
+    <div className={`${fontSans.variable} font-sans`}>
       <SiteHeader />
       <main>{children}</main>
       <SiteFooter />

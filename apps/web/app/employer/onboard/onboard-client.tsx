@@ -51,7 +51,7 @@ function OnboardClientInner() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">
           Company email *
         </label>
         <input
@@ -59,12 +59,12 @@ function OnboardClientInner() {
           required
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="you@company.com"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">
           Company name *
         </label>
         <input
@@ -73,22 +73,22 @@ function OnboardClientInner() {
           minLength={2}
           value={form.companyName}
           onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="Acme Inc."
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Website</label>
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">Website</label>
         <input
           type="url"
           value={form.website}
           onChange={(e) => setForm({ ...form, website: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="https://company.com"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">
+        <label className="mb-1 block text-sm font-medium text-muted-foreground">
           Company description
         </label>
         <textarea
@@ -96,7 +96,7 @@ function OnboardClientInner() {
           maxLength={500}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           placeholder="What does your company do? (max 500 chars)"
         />
       </div>
@@ -104,7 +104,7 @@ function OnboardClientInner() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+        className="w-full btn-brand rounded-full py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
         {loading ? "Setting up…" : "Create Employer Profile →"}
       </button>

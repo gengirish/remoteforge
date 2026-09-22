@@ -9,8 +9,20 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-body)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-sans)", "system-ui", "sans-serif"],
+      },
+      // Outfit reads heavy at its nominal weights. Shift the scale down one
+      // step so existing font-bold / font-semibold land on micro1's lighter look.
+      fontWeight: {
+        medium: "450",
+        semibold: "500",
+        bold: "600",
+        extrabold: "650",
+      },
+      letterSpacing: {
+        tight: "-0.02em",
+        tighter: "-0.03em",
       },
       colors: {
         border: "hsl(var(--border))",

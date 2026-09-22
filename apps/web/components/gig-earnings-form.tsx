@@ -44,7 +44,7 @@ export function GigEarningsForm({
 
   if (status === "success") {
     return (
-      <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+      <div className="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/15 p-4 text-sm text-green-800 dark:text-green-300">
         Thanks! Your earnings report helps other Indian freelancers benchmark their income.
       </div>
     );

@@ -18,11 +18,8 @@ function getStoredTheme(): Theme | null {
   return null;
 }
 
-function getSystemTheme(): Theme {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
+// The site is dark-first; light is an explicit opt-in that gets remembered.
+const DEFAULT_THEME: Theme = "dark";
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
@@ -34,25 +31,13 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
 
   useEffect(() => {
     setMounted(true);
-    const resolved = getStoredTheme() ?? getSystemTheme();
+    const resolved = getStoredTheme() ?? DEFAULT_THEME;
     setTheme(resolved);
     applyTheme(resolved);
-
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystemChange = () => {
-      if (getStoredTheme() === null) {
-        const next = getSystemTheme();
-        setTheme(next);
-        applyTheme(next);
-      }
-    };
-
-    media.addEventListener("change", onSystemChange);
-    return () => media.removeEventListener("change", onSystemChange);
   }, []);
 
   const toggle = () => {
@@ -74,7 +59,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       onClick={toggle}
       className={cn(
-        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground transition-colors hover:bg-muted",
+        "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted",
         className,
       )}
       aria-label={mounted ? label : "Toggle theme"}
