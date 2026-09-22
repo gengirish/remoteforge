@@ -22,11 +22,15 @@ test.describe("internal stats", () => {
     const page = await context.newPage();
     await page.goto("/internal");
 
-    await expect(page.getByText("Prep Waitlist").locator("..")).toContainText("23");
-    await expect(page.getByText("Approval Alerts").locator("..")).toContainText("14");
+    await expect(page.getByText("Prep Waitlist", { exact: true }).locator("..")).toContainText("23");
+    await expect(page.getByText("Approval Alerts", { exact: true }).locator("..")).toContainText("14");
     const row = page.getByRole("row", { name: /outlier-ai/ });
     await expect(row).toContainText("prep-waitlist");
     await expect(row).toContainText("11");
+
+    await expect(page.getByText("New Subscribers (7d)", { exact: true }).locator("..")).toContainText("6");
+    await expect(page.getByRole("row", { name: /14 Sept?/ })).toContainText("4");
+    await expect(page.getByRole("row", { name: /guide-mercor-interview-tips/ })).toContainText("8");
     await context.close();
   });
 });

@@ -90,6 +90,12 @@ type InternalStats = {
     /** Per-platform counts, e.g. { signal: "prep-waitlist:outlier-ai", count: 12 }. */
     bySignal: { signal: string; count: number }[];
   };
+  signups: {
+    last7: number;
+    /** Newest first; `week` is the Monday it starts (YYYY-MM-DD). Empty weeks are absent. */
+    byWeek: { week: string; count: number }[];
+    bySource: { source: string; count: number }[];
+  };
   featuredSlots: { jobTitle: string; company: string; expiresAt: string; amountPaise: number }[];
   topJobs: { jobId: string; _count: { id: number } }[];
   topGigPlatforms: { platformId: string; _count: { id: number } }[];

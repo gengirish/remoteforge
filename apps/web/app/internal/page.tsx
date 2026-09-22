@@ -43,6 +43,64 @@ export default async function InternalStatsPage() {
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Prep Waitlist" value={stats.intents.prepWaitlist.toLocaleString()} />
         <StatCard label="Approval Alerts" value={stats.intents.approvalAlerts.toLocaleString()} />
+        <StatCard label="New Subscribers (7d)" value={stats.signups.last7.toLocaleString()} />
+      </div>
+
+      <div className="mt-8 grid gap-6 sm:grid-cols-2">
+        <section>
+          <h2 className="mb-3 text-lg font-semibold">Signups by Week</h2>
+          {stats.signups.byWeek.length > 0 ? (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="pb-2 font-normal">Week of</th>
+                  <th className="pb-2 text-right font-normal">Signups</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.signups.byWeek.map(({ week, count }) => (
+                  <tr key={week} className="border-b border-border last:border-0">
+                    <td className="py-2">
+                      {new Date(`${week}T00:00:00Z`).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        timeZone: "UTC",
+                      })}
+                    </td>
+                    <td className="py-2 text-right font-medium">{count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-sm text-muted-foreground">No signups in the last 12 weeks.</p>
+          )}
+        </section>
+
+        {stats.signups.bySource.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">Signups by Source</h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-muted-foreground">
+                  <th className="pb-2 font-normal">Source</th>
+                  <th className="pb-2 text-right font-normal">Subscribers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.signups.bySource.map(({ source, count }) => (
+                  <tr key={source} className="border-b border-border last:border-0">
+                    <td className="py-2 font-medium">{source}</td>
+                    <td className="py-2 text-right font-medium">{count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs text-muted-foreground">
+              First signup page, except that joining a prep waitlist later changes it to prep-waitlist.
+            </p>
+          </section>
+        )}
       </div>
 
       {stats.intents.bySignal.length > 0 && (

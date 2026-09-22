@@ -152,7 +152,7 @@ Env vars (`AFFILIATE_*`) still work as fallback until you save a value in the ad
 
 ### Owner stats (`/internal`)
 
-`https://remoteforge.intelliforge.tech/internal` shows human clicks, total subscribers, the **prep waitlist** and **approval alert** totals, and interest per platform (one row per `Subscriber.signals` value, e.g. `outlier-ai · prep-waitlist`). Waitlist totals count `source = 'prep-waitlist'` or any `prep-waitlist:*` signal, so guide signups are included.
+`https://remoteforge.intelliforge.tech/internal` shows human clicks, total subscribers, the **prep waitlist** and **approval alert** totals, and interest per platform (one row per `Subscriber.signals` value, e.g. `outlier-ai · prep-waitlist`). Waitlist totals count `source = 'prep-waitlist'` or any `prep-waitlist:*` signal, so guide signups are included. It also shows new subscribers in the last 7 days, signups per week (last 12 weeks, weeks starting Monday), and signups by `source`. `source` is the first signup page, except that joining a prep waitlist later rewrites it to `prep-waitlist`.
 
 The page is behind HTTP basic auth in `apps/web/middleware.ts`: any username, `REMOTEFORGE_INTERNAL_KEY` as the password. With the key unset on Vercel the page stays locked; with it unset on Fly the page loads but shows "Unable to load stats". Setup:
 

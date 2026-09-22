@@ -263,6 +263,17 @@ export const internalStats = {
       { signal: "approval-alert:mercor", count: 9 },
     ],
   },
+  signups: {
+    last7: 6,
+    byWeek: [
+      { week: "2026-09-21", count: 6 },
+      { week: "2026-09-14", count: 4 },
+    ],
+    bySource: [
+      { source: "prep-waitlist", count: 23 },
+      { source: "guide-mercor-interview-tips", count: 8 },
+    ],
+  },
   featuredSlots: [],
   topJobs: [],
   topGigPlatforms: [],

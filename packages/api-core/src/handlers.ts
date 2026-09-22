@@ -726,6 +726,9 @@ export async function handleInternalStats(internalKey: string | undefined, confi
     botGigClicks7d,
     intentTotals,
     signalCounts,
+    subscribersLast7,
+    signupsByWeek,
+    signupsBySource,
   ] = await Promise.all([
     prisma.jobClick.count({ where: clean }),
     prisma.gigClick.count({ where: clean }),
@@ -766,6 +769,19 @@ export async function handleInternalStats(internalKey: string | undefined, confi
       SELECT s AS signal, count(*)::int AS count
       FROM "Subscriber", unnest(signals) s
       GROUP BY s ORDER BY count DESC, s`,
+    prisma.subscriber.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    // Weeks start Monday (date_trunc). Weeks with no signups are simply absent.
+    prisma.$queryRaw<{ week: string; count: number }[]>`
+      SELECT to_char(date_trunc('week', "createdAt"), 'YYYY-MM-DD') AS week, count(*)::int AS count
+      FROM "Subscriber"
+      WHERE "createdAt" >= date_trunc('week', now()) - interval '11 weeks'
+      GROUP BY 1 ORDER BY 1 DESC`,
+    // source is first touch, except that joining the prep waitlist rewrites it to "prep-waitlist".
+    prisma.subscriber.groupBy({
+      by: ["source"],
+      _count: { id: true },
+      orderBy: { _count: { id: "desc" } },
+    }),
   ]);
 
   return {
@@ -782,6 +798,11 @@ export async function handleInternalStats(internalKey: string | undefined, confi
       },
       subscribers: subscriberCount,
       intents: { ...intentTotals[0], bySignal: signalCounts },
+      signups: {
+        last7: subscribersLast7,
+        byWeek: signupsByWeek,
+        bySource: signupsBySource.map((r) => ({ source: r.source, count: r._count.id })),
+      },
       featuredSlots: featuredSlots.map((s) => ({
         jobTitle: s.job.title,
         company: s.job.company,
