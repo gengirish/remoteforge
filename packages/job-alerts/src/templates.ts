@@ -122,7 +122,10 @@ export interface LayoutOptions {
 
 export function layout({ preheader, appUrl, body, unsubscribeUrl, reason }: LayoutOptions): string {
   const unsubscribe = unsubscribeUrl
-    ? ` &middot; <a href="${esc(unsubscribeUrl)}" style="color:${C.muted};text-decoration:underline;">Unsubscribe</a>`
+    ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid ${C.border};">
+          Don't want these emails?
+          <a href="${esc(unsubscribeUrl)}" style="color:${C.text};font-weight:600;text-decoration:underline;">Unsubscribe</a>
+        </div>`
     : "";
 
   return `<!DOCTYPE html>
@@ -157,7 +160,8 @@ ${body}
       <tr><td style="padding:24px 4px 0;font-family:${BODY_FONT};font-size:13px;line-height:1.6;color:${C.muted};">
         Remote jobs and AI gig platforms that hire from India.<br>
         ${esc(reason)}<br>
-        <a href="${esc(appUrl)}" style="color:${C.muted};text-decoration:underline;">${esc(hostOf(appUrl))}</a>${unsubscribe}
+        <a href="${esc(appUrl)}" style="color:${C.muted};text-decoration:underline;">${esc(hostOf(appUrl))}</a>
+        ${unsubscribe}
       </td></tr>
     </table>
   </td></tr>
