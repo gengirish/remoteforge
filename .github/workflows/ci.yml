@@ -35,6 +35,8 @@ jobs:
 
       - run: pnpm --filter @remoteforge/ingestion-worker lint
 
+      - run: pnpm --filter @intelliforge/api-core test
+
       - run: pnpm --filter web build
         env:
           NEXT_PUBLIC_APP_URL: https://remoteforge.intelliforge.tech
