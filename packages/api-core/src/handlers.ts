@@ -7,6 +7,17 @@ import { z } from "zod";
 import { loadAffiliateSettings } from "@intelliforge/db";
 import { getAffiliateSettingsForAdmin } from "./affiliate-config";
 import { getRedirectTarget } from "./affiliate";
+import {
+  createDodoCheckoutSession,
+  dodoConfigError,
+  getDodoWebhookSecret,
+  verifyDodoWebhook,
+  type DodoPaymentPayload,
+  type DodoRefundPayload,
+  type DodoSubscriptionPayload,
+  type DodoWebhookEvent,
+  type DodoWebhookHeaders,
+} from "./dodo";
 import { REPEAT_CLICK_WINDOW_MS, isBotUserAgent } from "./bot-filter";
 import { authorizeCron } from "./cron-auth";
 import { computeMatchScore } from "./match-score";
@@ -436,141 +447,295 @@ export async function handleUnsubscribe(email: string | undefined, token: string
 }
 
 const featuredSchema = z.object({ jobId: z.string().min(1) });
-const FEATURED_AMOUNT_PAISE = 499_900;
 
-export async function handleFeaturedCreateOrder(body: unknown) {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keyId || !keySecret) return { status: 503 as const, body: fail("Razorpay not configured") };
+// Display and fallback amounts only. The price actually charged lives on the
+// Dodo product that DODO_PRODUCT_* points at, so these must be kept in step
+// with the dashboard by hand.
+const FEATURED_AMOUNT_PAISE = 499_900; // INR 4,999/month
+const PREMIUM_AMOUNT_PAISE = 49_900; // INR 499/month
+const EMPLOYER_STARTER_PAISE = 299_900; // INR 2,999/month
+
+function oneMonthFrom(start: Date): Date {
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+  return end;
+}
+
+// Dodo reports when the next charge lands. Trust that over a local +1 month so
+// access never lapses before the period the customer actually paid for.
+function subscriptionExpiry(nextBillingDate: string | null | undefined, startsAt: Date): Date {
+  if (nextBillingDate) {
+    const parsed = new Date(nextBillingDate);
+    if (!Number.isNaN(parsed.getTime()) && parsed.getTime() > startsAt.getTime()) return parsed;
+  }
+  return oneMonthFrom(startsAt);
+}
+
+// POST /api/featured/checkout
+export async function handleFeaturedCheckout(body: unknown) {
+  const configError = dodoConfigError("featured");
+  if (configError) return { status: 503 as const, body: fail(configError) };
 
   const parsed = featuredSchema.safeParse(body);
   if (!parsed.success) return { status: 400 as const, body: fail(parsed.error.message) };
 
-  const job = await prisma.job.findUnique({ where: { id: parsed.data.jobId } });
+  const job = await prisma.job.findUnique({
+    where: { id: parsed.data.jobId },
+    select: { id: true, slug: true, title: true },
+  });
   if (!job) return { status: 404 as const, body: fail("Job not found") };
 
-  const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
-    },
-    body: JSON.stringify({
-      amount: FEATURED_AMOUNT_PAISE,
-      currency: "INR",
-      receipt: `featured_${job.id.slice(0, 8)}`,
-      notes: { jobId: job.id, jobTitle: job.title },
-    }),
+  const session = await createDodoCheckoutSession({
+    product: "featured",
+    returnUrl: `${SITE_URL}/jobs/${job.slug}?featured=success`,
+    metadata: { type: "featured_slot", jobId: job.id },
   });
+  if (!session.ok) return { status: session.status, body: fail(session.error) };
 
-  if (!orderRes.ok) return { status: 502 as const, body: fail(await orderRes.text()) };
-  const order = (await orderRes.json()) as { id: string; amount: number };
   return {
     status: 200 as const,
-    body: ok({ orderId: order.id, amount: order.amount, currency: "INR", keyId, jobTitle: job.title }),
+    body: ok({
+      checkoutUrl: session.checkoutUrl,
+      sessionId: session.sessionId,
+      amountPaise: FEATURED_AMOUNT_PAISE,
+      currency: "INR",
+      jobTitle: job.title,
+    }),
   };
 }
 
-function verifyRazorpaySignature(body: string, signature: string, secret: string): boolean {
-  const expected = createHmac("sha256", secret).update(body).digest("hex");
+// POST /api/webhooks/dodo - the only place a paid entitlement is ever granted.
+export async function handleDodoWebhook(rawBody: string, headers: DodoWebhookHeaders) {
+  const secret = getDodoWebhookSecret();
+  if (!secret) return { status: 500 as const, body: fail("Webhook not configured") };
+
+  const verified = verifyDodoWebhook(rawBody, headers, secret);
+  if (!verified.ok) return { status: 401 as const, body: fail(verified.reason) };
+
+  let event: DodoWebhookEvent;
   try {
-    return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    event = JSON.parse(rawBody) as DodoWebhookEvent;
   } catch {
-    return false;
+    return { status: 400 as const, body: fail("Malformed webhook body") };
   }
-}
-
-export async function handleRazorpayWebhook(rawBody: string, signature: string) {
-  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!webhookSecret) return { status: 500 as const, body: fail("Webhook not configured") };
-  if (!verifyRazorpaySignature(rawBody, signature, webhookSecret)) {
-    return { status: 401 as const, body: fail("Invalid signature") };
+  if (!event?.type || !event.data) {
+    return { status: 400 as const, body: fail("Missing event type or data") };
   }
 
-  const event = JSON.parse(rawBody) as {
-    event: string;
-    payload: {
-      payment?: {
-        entity: {
-          id: string;
-          amount: number;
-          notes?: { jobId?: string; employerId?: string; userId?: string; clerkId?: string; type?: string };
-        };
-      };
-    };
-  };
-
-  if (event.event === "payment.captured") {
-    const payment = event.payload.payment?.entity;
-    if (!payment) return { status: 200 as const, body: ok({ received: true }) };
-
-    const noteType = payment.notes?.type;
-
-    if (noteType === "employer_subscription") {
-      const employerId = payment.notes?.employerId;
-      if (employerId) {
-        const startsAt = new Date();
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-        await prisma.employerSubscription.upsert({
-          where: { employerId },
-          create: {
-            employerId,
-            razorpayId: payment.id,
-            amountPaise: payment.amount,
-            tier: "starter",
-            startsAt,
-            expiresAt,
-          },
-          update: {
-            razorpayId: payment.id,
-            amountPaise: payment.amount,
-            startsAt,
-            expiresAt,
-          },
-        });
-        await prisma.employerProfile.update({
-          where: { id: employerId },
-          data: { subscriptionTier: "starter" },
-        });
-      }
-    } else if (noteType === "premium_subscription") {
-      const { userId, clerkId } = payment.notes as { userId?: string; clerkId?: string };
-      if (userId && clerkId) {
-        const startsAt = new Date();
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-        await (prisma as any).premiumSubscription.upsert({
-          where: { clerkId },
-          create: { userId, clerkId, razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
-          update: { razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
-        });
-      }
-    } else {
-      const jobId = payment.notes?.jobId;
-      if (jobId) {
-        const startsAt = new Date();
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-        await prisma.$transaction([
-          prisma.featuredSlot.upsert({
-            where: { jobId },
-            create: { jobId, razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
-            update: { razorpayId: payment.id, amountPaise: payment.amount, startsAt, expiresAt },
-          }),
-          prisma.job.update({ where: { id: jobId }, data: { isFeatured: true } }),
-        ]);
-      }
+  // Claim the delivery before acting on it: Dodo retries up to 8 times, and a
+  // replayed subscription.renewed would otherwise add a second month.
+  try {
+    await prisma.webhookEvent.create({ data: { id: headers.id, provider: "dodo", type: event.type } });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2002") {
+      return { status: 200 as const, body: ok({ received: true, duplicate: true }) };
     }
+    // If the claim itself failed, 500 so Dodo retries rather than losing it.
+    return { status: 500 as const, body: fail("Could not record webhook event") };
+  }
+
+  try {
+    await applyDodoEvent(event);
+  } catch (err) {
+    // Release the claim, or the retry would be dismissed as a duplicate and
+    // the customer would have paid without being granted anything.
+    await prisma.webhookEvent.delete({ where: { id: headers.id } }).catch(() => {});
+    return {
+      status: 500 as const,
+      body: fail(err instanceof Error ? err.message : "Webhook handling failed"),
+    };
   }
 
   return { status: 200 as const, body: ok({ received: true }) };
 }
 
+async function applyDodoEvent(event: DodoWebhookEvent): Promise<void> {
+  switch (event.type) {
+    case "payment.succeeded":
+      return applyPaymentSucceeded(event.data);
+    case "subscription.active":
+    case "subscription.renewed":
+    case "subscription.plan_changed":
+      return applySubscriptionActive(event.data);
+    // Retry window: flag it, but leave access until the paid period runs out.
+    case "subscription.past_due":
+      return markSubscription(event.data, "past_due", false);
+    case "subscription.on_hold":
+      return markSubscription(event.data, "on_hold", false);
+    // Cancelling stops renewal; it does not claw back the current period.
+    case "subscription.cancelled":
+      return markSubscription(event.data, "cancelled", false);
+    case "subscription.expired":
+      return markSubscription(event.data, "expired", true);
+    case "subscription.failed":
+      return markSubscription(event.data, "failed", true);
+    case "refund.created":
+      return applyRefund(event.data);
+    default:
+      return; // Everything else is informational.
+  }
+}
+
+async function applyPaymentSucceeded(payment: DodoPaymentPayload): Promise<void> {
+  // Subscription cycles emit payment.succeeded too, but subscription.* carries
+  // the billing dates, so that path owns them and this one would double-write.
+  if (payment.subscription_id) return;
+
+  const metadata = payment.metadata ?? {};
+  if (metadata.type !== "featured_slot") return;
+  const jobId = metadata.jobId;
+  if (!jobId) return;
+
+  const startsAt = new Date();
+  const expiresAt = oneMonthFrom(startsAt);
+  const amountPaise = Number.isFinite(payment.total_amount)
+    ? Number(payment.total_amount)
+    : FEATURED_AMOUNT_PAISE;
+  const dodoPaymentId = payment.payment_id ?? null;
+
+  await prisma.$transaction([
+    prisma.featuredSlot.upsert({
+      where: { jobId },
+      create: { jobId, dodoPaymentId, amountPaise, startsAt, expiresAt },
+      update: { dodoPaymentId, amountPaise, startsAt, expiresAt },
+    }),
+    prisma.job.update({ where: { id: jobId }, data: { isFeatured: true } }),
+  ]);
+}
+
+async function applySubscriptionActive(sub: DodoSubscriptionPayload): Promise<void> {
+  const metadata = sub.metadata ?? {};
+  const dodoSubscriptionId = sub.subscription_id ?? null;
+  const startsAt = new Date();
+  const expiresAt = subscriptionExpiry(sub.next_billing_date, startsAt);
+  const amount = Number.isFinite(sub.recurring_pre_tax_amount)
+    ? Number(sub.recurring_pre_tax_amount)
+    : null;
+
+  if (metadata.type === "employer_subscription") {
+    const employerId = metadata.employerId;
+    if (!employerId) return;
+    await prisma.$transaction([
+      prisma.employerSubscription.upsert({
+        where: { employerId },
+        create: {
+          employerId,
+          dodoSubscriptionId,
+          amountPaise: amount ?? EMPLOYER_STARTER_PAISE,
+          tier: "starter",
+          status: "active",
+          startsAt,
+          expiresAt,
+        },
+        // startsAt is deliberately not touched on renewal so it keeps meaning
+        // "customer since".
+        update: {
+          dodoSubscriptionId,
+          status: "active",
+          expiresAt,
+          ...(amount === null ? {} : { amountPaise: amount }),
+        },
+      }),
+      prisma.employerProfile.update({
+        where: { id: employerId },
+        data: { subscriptionTier: "starter" },
+      }),
+    ]);
+    return;
+  }
+
+  if (metadata.type === "premium_subscription") {
+    const { userId, clerkId } = metadata;
+    if (!userId || !clerkId) return;
+    await prisma.premiumSubscription.upsert({
+      where: { clerkId },
+      create: {
+        userId,
+        clerkId,
+        dodoSubscriptionId,
+        amountPaise: amount ?? PREMIUM_AMOUNT_PAISE,
+        status: "active",
+        startsAt,
+        expiresAt,
+      },
+      update: {
+        dodoSubscriptionId,
+        status: "active",
+        expiresAt,
+        ...(amount === null ? {} : { amountPaise: amount }),
+      },
+    });
+  }
+}
+
+async function markSubscription(
+  sub: DodoSubscriptionPayload,
+  status: string,
+  revokeNow: boolean,
+): Promise<void> {
+  const metadata = sub.metadata ?? {};
+  const dodoSubscriptionId = sub.subscription_id ?? null;
+  const data = { status, ...(revokeNow ? { expiresAt: new Date() } : {}) };
+
+  if (metadata.type === "premium_subscription" && metadata.clerkId) {
+    await prisma.premiumSubscription.updateMany({ where: { clerkId: metadata.clerkId }, data });
+    return;
+  }
+
+  if (metadata.type === "employer_subscription" && metadata.employerId) {
+    await prisma.employerSubscription.updateMany({
+      where: { employerId: metadata.employerId },
+      data,
+    });
+    if (revokeNow) {
+      await prisma.employerProfile.update({
+        where: { id: metadata.employerId },
+        data: { subscriptionTier: "free" },
+      });
+    }
+    return;
+  }
+
+  // Lifecycle events can arrive without our checkout metadata, so fall back to
+  // the id Dodo assigned. updateMany keeps a miss from throwing.
+  if (!dodoSubscriptionId) return;
+  await prisma.premiumSubscription.updateMany({ where: { dodoSubscriptionId }, data });
+  const employers = await prisma.employerSubscription.findMany({
+    where: { dodoSubscriptionId },
+    select: { employerId: true },
+  });
+  if (employers.length === 0) return;
+  await prisma.employerSubscription.updateMany({ where: { dodoSubscriptionId }, data });
+  if (revokeNow) {
+    await prisma.employerProfile.updateMany({
+      where: { id: { in: employers.map((e) => e.employerId) } },
+      data: { subscriptionTier: "free" },
+    });
+  }
+}
+
+async function applyRefund(refund: DodoRefundPayload): Promise<void> {
+  // Refunds don't carry our checkout metadata, so the payment id is the only
+  // link back to what was granted.
+  const paymentId = refund.payment_id;
+  if (!paymentId) return;
+
+  const slot = await prisma.featuredSlot.findFirst({
+    where: { dodoPaymentId: paymentId },
+    select: { id: true, jobId: true },
+  });
+  if (!slot) return;
+
+  await prisma.$transaction([
+    prisma.featuredSlot.update({ where: { id: slot.id }, data: { expiresAt: new Date() } }),
+    prisma.job.update({ where: { id: slot.jobId }, data: { isFeatured: false } }),
+  ]);
+}
+
 // GET /api/premium/status
 export async function handlePremiumStatus(clerkId: string | undefined) {
   if (!clerkId) return { status: 200 as const, body: ok({ isPremium: false, expiresAt: null }) };
-  const sub = await (prisma as any).premiumSubscription.findUnique({
+  const sub = await prisma.premiumSubscription.findUnique({
     where: { clerkId },
     select: { expiresAt: true, startsAt: true },
   });
@@ -579,32 +744,34 @@ export async function handlePremiumStatus(clerkId: string | undefined) {
 }
 
 // POST /api/premium/checkout
-const PREMIUM_AMOUNT_PAISE = 49900;
 export async function handlePremiumCheckout(clerkId: string | undefined) {
   if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keyId || !keySecret) return { status: 503 as const, body: fail("Razorpay not configured") };
+  const configError = dodoConfigError("premium");
+  if (configError) return { status: 503 as const, body: fail(configError) };
 
-  const profile = await prisma.userProfile.findUnique({ where: { clerkId }, select: { id: true, email: true } });
+  const profile = await prisma.userProfile.findUnique({
+    where: { clerkId },
+    select: { id: true, email: true },
+  });
   if (!profile) return { status: 404 as const, body: fail("Complete your profile first") };
 
-  const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
-    },
-    body: JSON.stringify({
-      amount: PREMIUM_AMOUNT_PAISE,
-      currency: "INR",
-      receipt: `prem_${profile.id.slice(0, 8)}`,
-      notes: { userId: profile.id, clerkId, type: "premium_subscription" },
-    }),
+  const session = await createDodoCheckoutSession({
+    product: "premium",
+    returnUrl: `${SITE_URL}/premium/success`,
+    metadata: { type: "premium_subscription", userId: profile.id, clerkId },
+    customer: { email: profile.email },
   });
-  if (!orderRes.ok) return { status: 502 as const, body: fail(await orderRes.text()) };
-  const order = (await orderRes.json()) as { id: string; amount: number };
-  return { status: 200 as const, body: ok({ orderId: order.id, amount: order.amount, currency: "INR", keyId }) };
+  if (!session.ok) return { status: session.status, body: fail(session.error) };
+
+  return {
+    status: 200 as const,
+    body: ok({
+      checkoutUrl: session.checkoutUrl,
+      sessionId: session.sessionId,
+      amountPaise: PREMIUM_AMOUNT_PAISE,
+      currency: "INR",
+    }),
+  };
 }
 
 export async function handleGoRedirect(
@@ -1646,35 +1813,33 @@ export async function maybeAwardReferralOnFirstApp(profileId: string): Promise<v
   ]);
 }
 
-const EMPLOYER_STARTER_PAISE = 299_900; // ₹2,999/month
-
 export async function handleEmployerSubscription(clerkId: string | undefined) {
   if (!clerkId) return { status: 401 as const, body: fail("Unauthorized") };
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keyId || !keySecret) return { status: 503 as const, body: fail("Razorpay not configured") };
+  const configError = dodoConfigError("employerStarter");
+  if (configError) return { status: 503 as const, body: fail(configError) };
 
-  const employer = await prisma.employerProfile.findUnique({ where: { clerkId } });
-  if (!employer) return { status: 404 as const, body: fail("Employer profile not found — onboard first") };
-
-  const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
-    },
-    body: JSON.stringify({
-      amount: EMPLOYER_STARTER_PAISE,
-      currency: "INR",
-      receipt: `emp_${employer.id.slice(0, 8)}`,
-      notes: { employerId: employer.id, type: "employer_subscription" },
-    }),
+  const employer = await prisma.employerProfile.findUnique({
+    where: { clerkId },
+    select: { id: true, email: true, companyName: true },
   });
-  if (!orderRes.ok) return { status: 502 as const, body: fail(await orderRes.text()) };
-  const order = (await orderRes.json()) as { id: string; amount: number };
+  if (!employer) return { status: 404 as const, body: fail("Employer profile not found - onboard first") };
+
+  const session = await createDodoCheckoutSession({
+    product: "employerStarter",
+    returnUrl: `${SITE_URL}/employer/dashboard?upgraded=1`,
+    metadata: { type: "employer_subscription", employerId: employer.id },
+    customer: { email: employer.email, name: employer.companyName },
+  });
+  if (!session.ok) return { status: session.status, body: fail(session.error) };
+
   return {
     status: 200 as const,
-    body: ok({ orderId: order.id, amount: order.amount, currency: "INR", keyId }),
+    body: ok({
+      checkoutUrl: session.checkoutUrl,
+      sessionId: session.sessionId,
+      amountPaise: EMPLOYER_STARTER_PAISE,
+      currency: "INR",
+    }),
   };
 }
 

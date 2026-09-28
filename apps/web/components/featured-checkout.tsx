@@ -4,29 +4,9 @@ import { useState } from "react";
 import { getPublicApiUrl } from "@/lib/api-url";
 import { Button } from "./ui/button";
 
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
-
 interface FeaturedCheckoutProps {
   jobId: string;
   jobTitle: string;
-}
-
-function loadRazorpay(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Razorpay) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load Razorpay"));
-    document.body.appendChild(script);
-  });
 }
 
 export function FeaturedCheckout({ jobId, jobTitle }: FeaturedCheckoutProps) {
@@ -38,7 +18,7 @@ export function FeaturedCheckout({ jobId, jobTitle }: FeaturedCheckoutProps) {
     setMessage("");
 
     try {
-      const res = await fetch(`${getPublicApiUrl()}/api/featured/create-order`, {
+      const res = await fetch(`${getPublicApiUrl()}/api/featured/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId }),
@@ -49,25 +29,11 @@ export function FeaturedCheckout({ jobId, jobTitle }: FeaturedCheckoutProps) {
         return;
       }
 
-      await loadRazorpay();
-
-      const { orderId, amount, keyId } = json.data;
-      const rzp = new window.Razorpay({
-        key: keyId,
-        amount,
-        currency: "INR",
-        name: "RemoteForge",
-        description: `Featured listing: ${jobTitle}`,
-        order_id: orderId,
-        theme: { color: "#7065f0" },
-        handler: () => {
-          setMessage("Payment received! Your job will be featured shortly.");
-        },
-      });
-      rzp.open();
+      // Dodo hosts the checkout, so we hand the browser over rather than
+      // opening a modal. Keep loading true: this navigates away.
+      window.location.href = json.data.checkoutUrl;
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Checkout error");
-    } finally {
       setLoading(false);
     }
   }
@@ -84,10 +50,11 @@ export function FeaturedCheckout({ jobId, jobTitle }: FeaturedCheckoutProps) {
         className="mt-3"
         disabled={loading}
         onClick={handleCheckout}
+        aria-label={`Feature ${jobTitle} for ₹4,999 per month`}
       >
-        {loading ? "Loading..." : "Pay with Razorpay"}
+        {loading ? "Redirecting…" : "Feature this job"}
       </Button>
-      {message && <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}
+      {message && <p className="mt-2 text-sm text-destructive">{message}</p>}
     </div>
   );
 }

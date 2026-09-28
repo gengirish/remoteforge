@@ -20,6 +20,7 @@ export function PremiumCheckout() {
 function PremiumCheckoutInner() {
   const { userId, getToken } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const apiUrl = getPublicApiUrl();
 
   async function handleCheckout() {
@@ -28,44 +29,41 @@ function PremiumCheckoutInner() {
       return;
     }
     setLoading(true);
+    setError("");
     try {
       const res = await fetch(`${apiUrl}/api/premium/checkout`, {
         method: "POST",
         headers: { Authorization: `Bearer ${await getToken()}` },
       });
-      const data = (await res.json()) as {
-        data: { orderId: string; amount: number; keyId: string };
-      };
-      const { orderId, amount, keyId } = data.data;
+      const json = (await res.json()) as
+        | { success: true; data: { checkoutUrl: string } }
+        | { success: false; error: string };
 
-      const rzp = new (window as unknown as { Razorpay: new (opts: Record<string, unknown>) => { open: () => void } }).Razorpay({
-        key: keyId,
-        amount,
-        currency: "INR",
-        name: "RemoteForge Premium",
-        description: "1 month premium access",
-        order_id: orderId,
-        handler: () => {
-          window.location.href = "/premium/success";
-        },
-        prefill: {},
-        theme: { color: "#7065f0" },
-      });
-      rzp.open();
+      if (!json.success) {
+        setError(json.error ?? "Checkout is unavailable right now.");
+        setLoading(false);
+        return;
+      }
+
+      // Dodo's hosted checkout collects payment and returns the customer to
+      // /premium/success; the entitlement itself is granted by the webhook.
+      window.location.href = json.data.checkoutUrl;
     } catch {
-      // Razorpay error — user can retry
-    } finally {
+      setError("Could not reach checkout. Please try again.");
       setLoading(false);
     }
   }
 
   return (
-    <button
-      onClick={handleCheckout}
-      disabled={loading}
-      className="rounded-lg bg-primary px-8 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-    >
-      {loading ? "Loading…" : "Get Premium — ₹499/month"}
-    </button>
+    <div className="flex flex-col items-center gap-2">
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className="rounded-lg bg-primary px-8 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+      >
+        {loading ? "Redirecting…" : "Get Premium — ₹499/month"}
+      </button>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
   );
 }

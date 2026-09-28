@@ -12,7 +12,7 @@ import {
   handleDigest,
   handleUnsubscribe,
   handleUnsubscribePage,
-  handleFeaturedCreateOrder,
+  handleFeaturedCheckout,
   handleGigAffiliateUpdate,
   handleGetApplications,
   handleGigsGet,
@@ -26,7 +26,7 @@ import {
   handleJobBySlug,
   handleJobSlugs,
   handleJobsGet,
-  handleRazorpayWebhook,
+  handleDodoWebhook,
   handleRecommendedJobs,
   handleSubscribe,
   handleGetProfile,
@@ -214,18 +214,21 @@ app.post("/api/unsubscribe", async (c) => {
   return c.html(body, status);
 });
 
-app.post("/api/featured/create-order", async (c) => {
+app.post("/api/featured/checkout", async (c) => {
   const body = await c.req.json().catch(() => null);
-  const { status, body: res } = await handleFeaturedCreateOrder(body);
+  const { status, body: res } = await handleFeaturedCheckout(body);
   return c.json(res, status);
 });
 
-app.post("/api/webhooks/razorpay", async (c) => {
+app.post("/api/webhooks/dodo", async (c) => {
+  // Read the body as text: the signature covers the raw bytes, so re-serialising
+  // parsed JSON would break verification.
   const raw = await c.req.text();
-  const { status, body } = await handleRazorpayWebhook(
-    raw,
-    c.req.header("x-razorpay-signature") ?? "",
-  );
+  const { status, body } = await handleDodoWebhook(raw, {
+    id: c.req.header("webhook-id") ?? "",
+    timestamp: c.req.header("webhook-timestamp") ?? "",
+    signature: c.req.header("webhook-signature") ?? "",
+  });
   return c.json(body, status);
 });
 

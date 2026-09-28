@@ -138,7 +138,7 @@ model FeaturedSlot {
   id          String   @id @default(cuid())
   jobId       String   @unique
   job         Job      @relation(fields: [jobId], references: [id])
-  razorpayId  String?
+  dodoPaymentId String?
   amountPaise Int
   startsAt    DateTime
   expiresAt   DateTime
@@ -373,9 +373,11 @@ model EmployerSubscription {
   id         String          @id @default(cuid())
   employerId String          @unique
   employer   EmployerProfile @relation(fields: [employerId], references: [id])
-  razorpayId String?
+  dodoPaymentId      String?
+  dodoSubscriptionId String?  @unique
   amountPaise Int
   tier       String          @default("starter")
+  status     String          @default("active")
   startsAt   DateTime
   expiresAt  DateTime
   createdAt  DateTime        @default(now())
@@ -385,8 +387,10 @@ model PremiumSubscription {
   id          String   @id @default(cuid())
   userId      String   @unique
   clerkId     String   @unique
-  razorpayId  String?
+  dodoPaymentId      String?
+  dodoSubscriptionId String? @unique
   amountPaise Int      @default(49900)
+  status      String   @default("active")
   startsAt    DateTime
   expiresAt   DateTime
   createdAt   DateTime @default(now())
@@ -414,4 +418,16 @@ model ApiKeyUsage {
   createdAt DateTime @default(now())
 
   @@index([keyId, createdAt])
+}
+
+// One row per delivered webhook-id. Inserting it is how an event is claimed:
+// Dodo retries a delivery up to 8 times, so this unique id is the only thing
+// stopping a retry from granting a second month of access.
+model WebhookEvent {
+  id         String   @id
+  provider   String   @default("dodo")
+  type       String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
 }

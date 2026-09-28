@@ -13,12 +13,6 @@ type Report = {
   generatedAt: string;
 } | null;
 
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open(): void };
-  }
-}
-
 export default function TalentReportClient({
   report,
   isSubscriber,
@@ -62,40 +56,14 @@ function TalentReportClientInner({
         headers: { Authorization: `Bearer ${await getToken()}` },
       });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Failed to create order");
-      const { orderId, amount, currency, keyId } = json.data as {
-        orderId: string;
-        amount: number;
-        currency: string;
-        keyId: string;
-      };
+      if (!json.success) throw new Error(json.error ?? "Could not start checkout");
+      const { checkoutUrl } = json.data as { checkoutUrl: string };
 
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load Razorpay"));
-        document.body.appendChild(script);
-      });
-
-      const rzp = new window.Razorpay({
-        key: keyId,
-        amount,
-        currency,
-        order_id: orderId,
-        name: "RemoteForge",
-        description: "Employer Starter Plan — ₹2,999/month",
-        handler: () => {
-          window.location.href = "/employer/dashboard";
-        },
-        prefill: {
-          email: user.primaryEmailAddress?.emailAddress,
-        },
-      });
-      rzp.open();
+      // Dodo hosts the checkout and returns the employer to the dashboard; the
+      // tier is upgraded by the webhook, not by this redirect.
+      window.location.href = checkoutUrl;
     } catch (err) {
       setUpgradeError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
       setUpgrading(false);
     }
   }

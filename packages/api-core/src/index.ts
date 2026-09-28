@@ -8,7 +8,7 @@ export {
   handleUnsubscribePage,
   handleAffiliateSettingsGet,
   handleAffiliateSettingsUpdate,
-  handleFeaturedCreateOrder,
+  handleFeaturedCheckout,
   handleGetApplications,
   handleGigAffiliateUpdate,
   handleGigSlugs,
@@ -22,7 +22,7 @@ export {
   handleJobBySlug,
   handleJobSlugs,
   handleJobsGet,
-  handleRazorpayWebhook,
+  handleDodoWebhook,
   handleRecommendedJobs,
   handleSubscribe,
   handleUpsertProfile,
@@ -61,3 +61,4 @@ export {
   verifyApiKey,
 } from "./handlers";
 export { getAffiliateSettingsForAdmin, loadAffiliateSettings } from "./affiliate-config";
+export { getDodoConfig, type DodoWebhookHeaders } from "./dodo";

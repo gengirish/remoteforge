@@ -1,4 +1,3 @@
-import Script from "next/script";
 import type { Metadata } from "next";
 import { PremiumCheckout } from "./premium-checkout";
 
@@ -25,8 +24,6 @@ const FEATURES = [
 export default function PremiumPage() {
   return (
     <>
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-
       <div className="mx-auto max-w-3xl px-4 py-12">
         <div className="text-center">
           <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
@@ -77,7 +74,7 @@ export default function PremiumPage() {
         <div className="mt-10 flex flex-col items-center gap-3">
           <PremiumCheckout />
           <p className="text-xs text-muted-foreground">
-            Cancel anytime · Secure payment via Razorpay · Indian pricing
+            Cancel anytime · UPI, cards and netbanking · GST-inclusive Indian pricing
           </p>
         </div>
 

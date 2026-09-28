@@ -43,7 +43,8 @@ pnpm deploy:api      # manual deploy; CI also deploys automatically, see below
 | `CLERK_SECRET_KEY` | when Clerk is on | signed-in routes treat every request as anonymous; the API verifies the Clerk session token sent as `Authorization: Bearer` |
 | `AGENTMAIL_API_KEY`, `AGENTMAIL_INBOX_ID` | for email | digest runs but sends nothing (see §5) |
 | `REMOTEFORGE_INTERNAL_KEY` | for admin | `/api/internal/*` returns 401, so `/admin/settings` can't load or save and `/internal` shows no stats (see §3) |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | for payments | checkout and the payment webhook fail (see §8) |
+| `DODO_PAYMENTS_API_KEY`, `DODO_WEBHOOK_SECRET`, `DODO_PRODUCT_*` | for payments | every checkout returns 503 and no entitlement can be granted (see §8) |
+| `DODO_MODE` | no | defaults to `test`, so real cards are never charged until it is set to `live` |
 | `UNSUBSCRIBE_SECRET`, `API_PUBLIC_URL` | no | see §5 Unsubscribe |
 | `NEXT_PUBLIC_APP_URL` | no | email links and referral share links default to `https://remoteforge.intelliforge.tech` |
 | `JOB_STALE_DAYS`, `JOB_MAX_AGE_DAYS` | no | stale-job expiry uses 3 and 30 days |
@@ -90,8 +91,8 @@ curl https://remoteforge-api.fly.dev/api/home
 | `POST /api/subscribe` | Signup with `source` and optional `signal`; returns `alreadySubscribed` |
 | `GET /api/unsubscribe` | Unsubscribe confirm page; no side effects |
 | `POST /api/unsubscribe` | Deletes the subscriber |
-| `POST /api/featured/create-order` | Razorpay |
-| `POST /api/webhooks/razorpay` | Payment webhook |
+| `POST /api/featured/checkout` | Creates a Dodo checkout session, returns `checkoutUrl` |
+| `POST /api/webhooks/dodo` | Payment webhook — the only place entitlements are granted |
 | `GET`/`POST /api/jobs/ingest` | Cron — job ingestion |
 | `GET /api/cron/digest` | Cron — email digest (`?to=` for one address) |
 | `GET /api/internal/stats` | Admin — clicks, subscribers, waitlist and alert interest (read by `/internal`) |
@@ -320,10 +321,90 @@ pnpm deploy:worker
 ```
 
 
-## 8. Razorpay webhook
+## 8. Dodo Payments
 
-Point to Fly (not Vercel):
+Dodo is the **merchant of record**: it is the legal seller, collects GST, and
+issues the customer's invoice. RemoteForge never sees card details and there is
+no client-side payment SDK — the browser is redirected to Dodo's hosted
+checkout and the outcome arrives as a webhook.
+
+### 8.1 Create the products
+
+Prices live in the Dodo dashboard, not in code. Under **Products**, create:
+
+| Product | Price | Billing | Env var |
+| --- | --- | --- | --- |
+| Featured job slot | ₹4,999 | one-time | `DODO_PRODUCT_FEATURED` |
+| RemoteForge Premium | ₹499 | recurring monthly | `DODO_PRODUCT_PREMIUM` |
+| Employer Starter | ₹2,999 | recurring monthly | `DODO_PRODUCT_EMPLOYER_STARTER` |
+
+The two subscriptions **must** be created as recurring products. A one-time
+product sold as "/month" never emits `subscription.renewed`, so access would
+silently lapse after the first period.
+
+The paise constants in `packages/api-core/src/handlers.ts` are only used for
+display and as a fallback when a payload omits the amount — changing a price in
+the dashboard means changing them too.
+
+### 8.2 Set the secrets on Fly
+
+```bash
+fly secrets set --app remoteforge-api \
+  DODO_PAYMENTS_API_KEY=... \
+  DODO_WEBHOOK_SECRET=whsec_... \
+  DODO_MODE=test \
+  DODO_PRODUCT_FEATURED=pdt_... \
+  DODO_PRODUCT_PREMIUM=pdt_... \
+  DODO_PRODUCT_EMPLOYER_STARTER=pdt_...
+```
+
+`DODO_MODE` defaults to `test`; only `live` switches to `https://live.dodopayments.com`.
+Leave it on `test` until a full test-mode purchase has been verified end to end.
+
+### 8.3 Point the webhook at Fly (not Vercel)
 
 ```
-https://remoteforge-api.fly.dev/api/webhooks/razorpay
+https://remoteforge-api.fly.dev/api/webhooks/dodo
 ```
+
+Subscribe to: `payment.succeeded`, `subscription.active`, `subscription.renewed`,
+`subscription.plan_changed`, `subscription.past_due`, `subscription.on_hold`,
+`subscription.cancelled`, `subscription.expired`, `subscription.failed`,
+`refund.created`. Anything else is accepted and ignored.
+
+Verification is [Standard Webhooks](https://www.standardwebhooks.com/): HMAC-SHA256
+over `{webhook-id}.{webhook-timestamp}.{raw body}`. A signature older than five
+minutes is rejected even if the HMAC matches, so the Fly machine's clock matters.
+
+### 8.4 Idempotency
+
+Every delivery is claimed by inserting its `webhook-id` into `WebhookEvent`
+before anything else happens. Dodo retries up to 8 times, and without that row a
+replayed `subscription.renewed` would hand out a second month. If applying the
+event throws, the claim is deleted so the retry can still land.
+
+To re-drive an event you have already processed, delete its row:
+
+```sql
+DELETE FROM "WebhookEvent" WHERE id = 'evt_...';
+```
+
+### 8.5 Testing
+
+```bash
+# Should be 503 until the secrets above are set.
+curl -X POST https://remoteforge-api.fly.dev/api/featured/checkout \
+  -H 'Content-Type: application/json' -d '{"jobId":"<real job id>"}'
+```
+
+A configured call returns `{ "success": true, "data": { "checkoutUrl": "..." } }`.
+Open it, pay with a test card or UPI, and confirm:
+
+1. Dodo's dashboard shows the payment.
+2. `WebhookEvent` has a row for the delivery.
+3. The entitlement landed — `FeaturedSlot` + `Job.isFeatured`, or
+   `PremiumSubscription` / `EmployerSubscription` with `status = 'active'` and
+   an `expiresAt` matching the subscription's next billing date.
+
+If step 1 happened but step 3 did not, the webhook is the problem, not checkout:
+check the signing secret and Fly logs.

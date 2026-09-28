@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-RemoteForge — India-focused aggregator for remote jobs (Remotive, WWR, RemoteOK) and AI gig platforms, monetized via affiliate CPA, Razorpay featured slots, and SEO content. Turborepo + pnpm monorepo.
+RemoteForge — India-focused aggregator for remote jobs (Remotive, WWR, RemoteOK) and AI gig platforms, monetized via affiliate CPA, Dodo Payments featured slots and subscriptions, and SEO content. Turborepo + pnpm monorepo.
 
 ## Commands
 
@@ -57,6 +57,30 @@ Bodies use the envelope from `packages/api-core/src/response.ts`: `ok(data)` →
 
 Editorial content is typed TypeScript in `apps/web/content/`, not the DB: `guides/` feeds `/guides/[slug]` (and the sitemap via `guideSlugs`), and `gig-approval/` feeds the approval section on `/ai-gigs/[slug]`, keyed by `GigPlatform.slug`. Adding a guide means a new file plus an entry in `content/guides/index.ts`. Guides give prep and process only, never assessment answers.
 
+### Payments
+
+**Dodo Payments is the merchant of record** — it is the legal seller, collects
+GST, and issues the invoice. There is no client-side payment SDK: handlers call
+`createDodoCheckoutSession` in `packages/api-core/src/dodo.ts`, the browser is
+redirected to the returned `checkoutUrl`, and `POST /api/webhooks/dodo` is the
+**only** place an entitlement is ever granted.
+
+Prices live on products in the Dodo dashboard (`DODO_PRODUCT_*` env ids); the
+paise constants in `handlers.ts` are display/fallback only. `DODO_MODE` defaults
+to `test`, so an unset value can never charge a real card. Each handler calls
+`dodoConfigError()` before any query, so an unconfigured install returns 503
+without waking Neon.
+
+Webhook verification is Standard Webhooks (HMAC-SHA256 over
+`{webhook-id}.{webhook-timestamp}.{raw body}`, five-minute tolerance) — the route
+must read the **raw** body, since re-serialising parsed JSON breaks the
+signature. Every delivery is claimed by inserting its `webhook-id` into
+`WebhookEvent` before being applied, because Dodo retries up to 8 times and a
+replayed `subscription.renewed` would otherwise grant a second month; if applying
+throws, the claim is deleted so the retry still works. Subscription expiry comes
+from the payload's `next_billing_date`, not a local +1 month. Setup is in
+`DEPLOY.md` §8.
+
 ### Subscribers and click metrics
 
 `POST /api/subscribe` takes a `source` (first touch, kept on later signups) and an optional `signal` (`approval-alert:{slug}` or `prep-waitlist:{slug}`) appended to `Subscriber.signals`. A new signup from a guide keeps `source = "guide-{slug}"`, so count the prep waitlist as `source = 'prep-waitlist'` **or** any `prep-waitlist:*` signal. A confirmation email goes out only for a new address or a new signal; otherwise the response carries `alreadySubscribed: true` and the form says so rather than promising an email. `/go/:id` stores every click but flags crawlers (`isBot`) and same-IP repeats (`isDuplicate`); every metric query must filter both to false. Metrics are read by hand, never on a timer (see the cost constraint): the owner page is `/internal` (fed by `handleInternalStats`), showing subscribers, prep-waitlist and approval-alert totals, and interest per platform.
@@ -92,6 +116,6 @@ Neon scales to zero after 5 minutes idle. A DB-backed health check on a 30s inte
 
 ## Conventions
 
-- `.cursor/skills/remoteforge-project/SKILL.md` is the skill routing table for this repo (Prisma, BullMQ, Razorpay, SEO, shadcn, etc.); `remotejobs-affiliate-engine-scaffold-prompt.md` at root is the full original architecture spec.
+- `.cursor/skills/remoteforge-project/SKILL.md` is the skill routing table for this repo (Prisma, BullMQ, SEO, shadcn, etc. — its Razorpay entry is stale, payments are Dodo); `remotejobs-affiliate-engine-scaffold-prompt.md` at root is the full original architecture spec.
 - Affiliate links are wrapped through `packages/affiliate-links` and resolved server-side in `packages/api-core/src/affiliate.ts`; `/go/:id` records the click and redirects.
 - Cross-product SSO to ForgeAhead/Vettd uses 5-minute handoff JWTs from `packages/cross-auth`.

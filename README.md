@@ -11,7 +11,7 @@ Live: https://remoteforge.intelliforge.tech
 - **DB**: Prisma + Neon PostgreSQL
 - **Workers**: BullMQ + Redis (`workers/ingestion`), **not deployed**; ingestion runs in-process on the API
 - **Auth**: Clerk (optional)
-- **Payments**: Razorpay featured slots
+- **Payments**: Dodo Payments (merchant of record) — featured job slots, jobseeker premium, employer starter
 - **Alerts**: weekly email digest via AgentMail. WhatsApp numbers are collected on signup; the Sarvam sender in `packages/job-alerts` exists but is not wired into the digest
 
 ## Architecture
@@ -100,8 +100,8 @@ Core routes (the full list, ~60 routes, is in `apps/api/src/server.ts`):
 | `/api/unsubscribe` | GET/POST | GET renders a confirm page (no side effects); POST deletes the subscriber |
 | `/api/jobs/ingest` | GET/POST | Cron — ingestion (runs inline) |
 | `/api/cron/digest` | GET | Cron — email digest (`?to=` sends to one address) |
-| `/api/featured/create-order` | POST | Razorpay checkout |
-| `/api/webhooks/razorpay` | POST | Payment webhook |
+| `/api/featured/checkout` | POST | Creates a Dodo checkout session, returns `checkoutUrl` |
+| `/api/webhooks/dodo` | POST | Payment webhook — the only place entitlements are granted |
 | `/go/:id` | GET | Affiliate redirect; logs the click, flagging bots and repeats |
 | `/api/internal/*` | — | Admin, requires `X-Internal-Key`. `/api/internal/stats` feeds the owner page `/internal` (basic auth, see `DEPLOY.md` §3) |
 
